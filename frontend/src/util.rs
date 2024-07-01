@@ -33,50 +33,100 @@ macro_rules! maybe_class {
 }
 pub use maybe_class;
 
+// #[macro_export]
+// macro_rules! async_handler {
+//     (&$cx:ident, [$($cap:ident),*],  move |$($args:tt : $types:ty),*| $body:expr) => {
+//         move |$($args),*| {
+//             $(
+//                 #[allow(unused_mut)]
+//                 let mut $cap = $cap.to_owned();
+//             )*
+//             $cx.spawn($body);
+//         }
+//     };
+//     (&$cx:ident, [$($cap:ident),*],  move |$($args:tt),*| $body:expr) => {
+//         move |$($args),*| {
+//             $(
+//                 #[allow(unused_mut)]
+//                 let mut $cap = $cap.to_owned();
+//             )*
+//             $cx.spawn($body);
+//         }
+//     };
+//     (&$cx:ident, move |$($args:tt),*| $body:expr) => {
+//         move |$($args),*| {
+//             $cx.spawn($body);
+//         }
+//     };
+// }
+
 #[macro_export]
 macro_rules! async_handler {
-    (&$cx:ident, [$($cap:ident),*],  move |$($args:tt : $types:ty),*| $body:expr) => {
-        move |$($args),*| {
+    ([$($cap:ident),*], move |$($args:tt : $types:ty),*| $body:expr) => {
+        move |$($args: $types),*| {
             $(
-                #[allow(unused_mut)]
-                let mut $cap = $cap.to_owned();
+                let $cap = $cap.clone();
             )*
-            $cx.spawn($body);
+            wasm_bindgen_futures::spawn_local($body);
         }
     };
-    (&$cx:ident, [$($cap:ident),*],  move |$($args:tt),*| $body:expr) => {
+    ([$($cap:ident),*], move |$($args:tt),*| $body:expr) => {
         move |$($args),*| {
             $(
-                #[allow(unused_mut)]
-                let mut $cap = $cap.to_owned();
+                let $cap = $cap.clone();
             )*
-            $cx.spawn($body);
+            wasm_bindgen_futures::spawn_local($body);
         }
     };
-    (&$cx:ident, move |$($args:tt),*| $body:expr) => {
+    (move |$($args:tt),*| $body:expr) => {
         move |$($args),*| {
-            $cx.spawn($body);
+            wasm_bindgen_futures::spawn_local($body);
         }
     };
 }
+
 pub use async_handler;
 
+// #[macro_export]
+// macro_rules! sync_handler {
+//     ([$($cap:ident),*],  move |$($args:tt : $types:ty),*| $body:expr) => {
+//         move |$($args: $types),*| {
+//             $(
+//                 #[allow(unused_mut)]
+//                 let mut $cap = $cap.to_owned();
+//             )*
+//             $body
+//         }
+//     };
+//     ([$($cap:ident),*],  move |$($args:tt),*| $body:expr) => {
+//         move |$($args),*| {
+//             $(
+//                 #[allow(unused_mut)]
+//                 let mut $cap = $cap.to_owned();
+//             )*
+//             $body
+//         }
+//     };
+//     (move |$($args:tt),*| $body:expr) => {
+//         move |$($args),*| {
+//             $body
+//         }
+//     };
+// }
 #[macro_export]
 macro_rules! sync_handler {
-    ([$($cap:ident),*],  move |$($args:tt : $types:ty),*| $body:expr) => {
+    ([$($cap:ident),*], move |$($args:tt : $types:ty),*| $body:expr) => {
         move |$($args: $types),*| {
             $(
-                #[allow(unused_mut)]
-                let mut $cap = $cap.to_owned();
+                let mut $cap = $cap;
             )*
             $body
         }
     };
-    ([$($cap:ident),*],  move |$($args:tt),*| $body:expr) => {
+    ([$($cap:ident),*], move |$($args:tt),*| $body:expr) => {
         move |$($args),*| {
             $(
-                #[allow(unused_mut)]
-                let mut $cap = $cap.to_owned();
+                let mut $cap = $cap;
             )*
             $body
         }
@@ -87,6 +137,16 @@ macro_rules! sync_handler {
         }
     };
 }
+
+// #[macro_export]
+// macro_rules! sync_handler {
+//     (move |$($args:tt),*| $body:expr) => {
+//         move |$($args),*| {
+//             $body // Closure body
+//         }
+//     };
+// }
+
 pub use sync_handler;
 
 pub fn window() -> Window {

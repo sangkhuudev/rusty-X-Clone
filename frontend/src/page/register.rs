@@ -32,8 +32,32 @@ pub fn UsernameInput (
             input {
                 id: "username",
                 name: "username",
-                class: "w-full border-2 rounded border-slate-400",
+                class: "input-field",
                 placeholder: "User name",
+                oninput: move |ev| oninput.call(ev),
+
+            }
+        }
+    }
+}
+
+#[component]
+pub fn PasswordInput (
+    state: Signal<String>,
+    oninput: EventHandler<FormEvent>
+) -> Element {
+    rsx! {
+        div {
+            class: "flex flex-col",
+            label {
+                r#for: "password",
+                "Password",
+            },
+            input {
+                id: "password",
+                name: "password",
+                class: "input-field",
+                placeholder: "Password",
                 oninput: move |ev| oninput.call(ev),
 
             }
@@ -45,8 +69,13 @@ pub fn Register() -> Element {
     let page_state = PageState::new();
     let page_state = use_signal(|| page_state);
     let username_oninput = sync_handler!([page_state], move |ev: FormEvent| {
-        page_state.with_mut(|state| state.username.set(ev.value().clone()));
+        page_state.with_mut(|state| state.username.set(ev.value()));
     });
+
+    let password_oninput = sync_handler!([page_state], move |ev: FormEvent| {
+        page_state.with_mut(|state| state.password.set(ev.value()));
+    });
+
     rsx! {
         form {
             class: "flex flex-col gap-5",
@@ -58,8 +87,13 @@ pub fn Register() -> Element {
                 state: page_state.with(|state| state.username.clone()),
                 oninput: username_oninput
             },
+
+            PasswordInput {
+                state: page_state.with(|state| state.password.clone()),
+                oninput: password_oninput
+            },
             button {
-                class: "px-4 py-72 rounded text-sm font-semibold bg-slate-600 shadow-sm text-white",
+                class: "button",
                 r#type: "submit",
                 "Signup",
             }
