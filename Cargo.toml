@@ -1,0 +1,22 @@
+[workspace]
+# Default members to build when no specific package is specified
+default-members = [
+  "backend/server",
+  "backend/crypto",
+  "backend/query",
+  "frontend",
+  "shared/cookie",
+]
+
+# Workspace resolver version
+resolver = "2"
+
+# All members of the workspace
+members = [
+  "backend/server",
+  "backend/crypto",
+  "backend/query",
+  "frontend",
+  "shared/cookie",
+  "tools/project-init",
+]
