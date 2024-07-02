@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
-use uchat_domain::Username;
+use uchat_domain::{Password, Username};
 use crate::elements::keyed_notifications_box::{
     KeyedNotifications, KeyedNotificationsBox
 }; 
@@ -20,6 +20,11 @@ impl PageState {
             password: use_signal(String::new),
             form_error: KeyedNotifications::default()
         }
+    }
+    pub fn can_submit(&self) -> bool {
+        !(self.form_error.has_message()
+        || self.username.read().is_empty()
+        || self.password.read().is_empty())
     }
 }
 
@@ -88,8 +93,18 @@ pub fn Register() -> Element {
     });
 
     let password_oninput = sync_handler!([page_state], move |ev: FormEvent| {
+        if let Err(e) = Password::new(&ev.value()) {
+            page_state.with_mut(|state| state.form_error.set("Bad password", e.to_string()));
+        } else {
+
+            page_state.with_mut(|state| state.form_error.remove("Bad password"));
+        }
         page_state.with_mut(|state| state.password.set(ev.value()));
     });
+    let btn_submit_style = match page_state.with(|state| state.can_submit()) {
+        false => "btn-disabled",
+        true => "",
+    };
 
     rsx! {
         form {
@@ -112,8 +127,9 @@ pub fn Register() -> Element {
                 notification: page_state.with(|state| state.form_error.clone())
             }
             button {
-                class: "btn",
+                class: "btn {btn_submit_style}",
                 r#type: "submit",
+                disabled: !page_state.with(|state| state.can_submit()),
                 "Signup",
             }
         }

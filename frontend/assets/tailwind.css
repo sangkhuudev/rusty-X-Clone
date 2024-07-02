@@ -560,8 +560,8 @@ video {
   background-color: rgb(71 85 105 / var(--tw-bg-opacity));
   padding-left: 1rem;
   padding-right: 1rem;
-  padding-top: 18rem;
-  padding-bottom: 18rem;
+  padding-top: 1.75rem;
+  padding-bottom: 1.75rem;
   font-size: 0.875rem;
   line-height: 1.25rem;
   font-weight: 600;
@@ -570,6 +570,12 @@ video {
   --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.btn-disabled {
+  cursor: not-allowed;
+  --tw-bg-opacity: 1;
+  background-color: rgb(203 213 225 / var(--tw-bg-opacity));
 }
 
 .input-field {
