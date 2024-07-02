@@ -3,6 +3,7 @@ use rand::rngs::StdRng;
 use uchat_crypto::sign::Keys;
 use uchat_query::{AsyncConnectionPool, QueryError};
 
+pub mod logging;
 #[derive(FromRef, Clone)]
 pub struct AppState {
     pub db_pool: AsyncConnectionPool,
@@ -32,6 +33,6 @@ pub mod cli {
             .wrap_err("Failed to load API_PRIVATE_KEY")
             .suggestion("Please set API_PRIVATE_KEY in .env")?;
 
-        Ok(Keys::from_encoded(private_key)?)
+        Ok(Keys::from_encoded(private_key))
     }
 }
