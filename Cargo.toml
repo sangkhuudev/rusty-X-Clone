@@ -6,6 +6,7 @@ default-members = [
   "backend/query",
   "frontend",
   "shared/cookie",
+  "shared/domain",
 ]
 
 # Workspace resolver version
@@ -18,5 +19,6 @@ members = [
   "backend/query",
   "frontend",
   "shared/cookie",
-  "tools/project-init",
+  "shared/domain",
+  "tools/project-init", 
 ]

@@ -1,0 +1,33 @@
+[package]
+name = "uchat_domain"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+regex = "1.10.5"
+thiserror = "1.0.61"
+once_cell = "1.19.0"
+uuid = { version = "1.9.1", features = ["v4", "serde", "js"]}
+nutype = { version = "0.4.2", features = ["serde"]}
+serde = { version = "1.0.203", features = ["derive"]}
+#backend
+diesel-derive-newtype = { version = "2.1.2", optional = true }
+
+
+
+[dependencies.diesel]
+version = "2.2.1"
+features = [
+    "uuid",
+    "postgres",
+    "postgres_backend",
+    "chrono",
+    "serde_json",
+    #This feature flag does not enable additional features.(See docs)
+    "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+]
+default-features = false
+optional = true
+
+[features]
+query = ["dep:diesel", "dep:diesel-derive-newtype"]
