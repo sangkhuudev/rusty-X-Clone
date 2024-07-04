@@ -1,10 +1,10 @@
 pub mod home;
-pub mod register;
 pub mod not_found;
+pub mod register;
 
 pub use home::{Blog, Home};
-pub use register::Register;
 pub use not_found::PageNotFound;
+pub use register::Register;
 pub use route::*;
 
 use dioxus::prelude::*;

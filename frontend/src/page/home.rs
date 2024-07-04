@@ -1,5 +1,5 @@
-use dioxus::prelude::*;
 use crate::page::Route;
+use dioxus::prelude::*;
 
 #[component]
 pub fn Home() -> Element {

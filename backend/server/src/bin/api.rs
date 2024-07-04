@@ -1,12 +1,11 @@
 use std::net::SocketAddr;
-use axum::Server;
 use clap::{Parser, command, Subcommand};
 use dotenvy::dotenv;
-use tracing::{debug, error, info};
+use tracing::{debug, info};
 use uchat_crypto::new_rng;
 use uchat_query::AsyncConnectionPool;
-use uchat_server::{cli::{gen_keys, load_keys}, logging::Verbosity, AppState};
-use color_eyre::{Result, Help, eyre::Context};
+use uchat_server::{cli::{gen_keys, load_keys}, logging::Verbosity, router::new_router, AppState};
+use anyhow::{Result, Context};
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -42,7 +41,7 @@ enum Command {
 
 
 async fn run() -> Result<()> {
-    color_eyre::install();
+    // color_eyre::install()?;
     let use_dotenv = dotenv();
     let args = Cli::parse();
 
@@ -57,7 +56,7 @@ async fn run() -> Result<()> {
             Command::GenKey => {
                 let mut rng = new_rng();
                 info!(target: "uchat_server", "Generating private key...");
-                let (key, _) = gen_keys(&mut rng);
+                let (key, _) = gen_keys(&mut rng)?;
                 let path ="private_key.base64";
                 std::fs::write(path, key.as_str())?;
                 info!(target: "uchat_server", path = path, "Private key has been saved to disk");
@@ -72,9 +71,9 @@ async fn run() -> Result<()> {
     info!(target: "uchat_server", database_url = %args.database_url, "connecting to database");
     let db_pool = AsyncConnectionPool::new(&args.database_url)
         .await
-        .with_suggestion(|| "Check database url")
-        .with_suggestion(|| "Ensure databasae access rights")
-        .with_suggestion(|| "Make sure database exists")?;
+        .with_context(|| "Check database url")
+        .with_context(|| "Ensure databasae access rights")
+        .with_context(|| "Make sure database exists")?;
 
     let state = AppState {
         db_pool,
@@ -83,17 +82,18 @@ async fn run() -> Result<()> {
     };
 
     info!(target: "uchat_server", bind_addr = %args.bind);
-    let router = new_router(state);
-    let server = Server::try_bind(&args.bind)
-        .wrap_error_with(|| "Failed to initialize server")
-        .with_suggestion(|| "Check bind address")
-        .with_suggestion(|| "Check if another service using this port")?;
-    let server = server.serve(router.into_make_service());
+    let router = new_router(state).await;
+    let listener = tokio::net::TcpListener::bind(&args.bind)
+        .await
+        // .wrap_error_with(|| "Failed to initialize server")
+        .with_context(|| "Check bind address")
+        .with_context(|| "Check if another service using this port")?;
+    // let server = listener.serve(router.await.into_make_service());
 
-    if let Err(e) = server.await {
-        error!(target: "uchat_server", server_error = %e);
-    }
-
+    // if let Err(e) = server.await {
+    //     error!(target: "uchat_server", server_error = %e);
+    // }
+    axum::serve(listener, router).await?;
     Ok(())
 }
 

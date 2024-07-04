@@ -85,7 +85,7 @@ mod exe {
     pub const RUSTUP: &str = "rustup";
     pub const TRUNK: &str = "trunk";
     pub const NPX: &str = "npx";
-    pub const JUST: &str = "just";
+    pub const MAKE: &str = "cargo-make";
 }
 
 fn main() {
@@ -145,9 +145,9 @@ fn main() {
             ],
         },
         Dependency {
-            name: exe::JUST,
-            locate: Box::new(|| exists(exe::JUST)),
-            install: vec![Install::Cmd(command!("cargo install just"))],
+            name: exe::MAKE,
+            locate: Box::new(|| exists(exe::MAKE)),
+            install: vec![Install::Cmd(command!("cargo install cargo-make"))],
         },
         Dependency {
             name: exe::DIESEL,

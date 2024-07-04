@@ -1,16 +1,14 @@
 #![allow(non_snake_case)]
 
+use crate::elements::keyed_notifications_box::{KeyedNotifications, KeyedNotificationsBox};
+use crate::prelude::*;
 use dioxus::prelude::*;
 use uchat_domain::{Password, Username};
-use crate::elements::keyed_notifications_box::{
-    KeyedNotifications, KeyedNotificationsBox
-}; 
-use crate::prelude::*;
 
 pub struct PageState {
     pub username: Signal<String>,
     pub password: Signal<String>,
-    pub form_error: KeyedNotifications
+    pub form_error: KeyedNotifications,
 }
 
 impl PageState {
@@ -18,21 +16,18 @@ impl PageState {
         Self {
             username: use_signal(String::new),
             password: use_signal(String::new),
-            form_error: KeyedNotifications::default()
+            form_error: KeyedNotifications::default(),
         }
     }
     pub fn can_submit(&self) -> bool {
         !(self.form_error.has_message()
-        || self.username.read().is_empty()
-        || self.password.read().is_empty())
+            || self.username.read().is_empty()
+            || self.password.read().is_empty())
     }
 }
 
 #[component]
-pub fn UsernameInput (
-    state: Signal<String>,
-    oninput: EventHandler<FormEvent>
-) -> Element {
+pub fn UsernameInput(state: Signal<String>, oninput: EventHandler<FormEvent>) -> Element {
     rsx! {
         div {
             class: "flex flex-col",
@@ -54,10 +49,7 @@ pub fn UsernameInput (
 }
 
 #[component]
-pub fn PasswordInput (
-    state: Signal<String>,
-    oninput: EventHandler<FormEvent>
-) -> Element {
+pub fn PasswordInput(state: Signal<String>, oninput: EventHandler<FormEvent>) -> Element {
     rsx! {
         div {
             class: "flex flex-col",
@@ -86,7 +78,6 @@ pub fn Register() -> Element {
         if let Err(e) = Username::new(&ev.value()) {
             page_state.with_mut(|state| state.form_error.set("Bad username", e.to_string()));
         } else {
-
             page_state.with_mut(|state| state.form_error.remove("Bad username"));
         }
         page_state.with_mut(|state| state.username.set(ev.value()));
@@ -96,7 +87,6 @@ pub fn Register() -> Element {
         if let Err(e) = Password::new(&ev.value()) {
             page_state.with_mut(|state| state.form_error.set("Bad password", e.to_string()));
         } else {
-
             page_state.with_mut(|state| state.form_error.remove("Bad password"));
         }
         page_state.with_mut(|state| state.password.set(ev.value()));

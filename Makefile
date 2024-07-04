@@ -1,75 +1,84 @@
-# Platform-specific configurations
-ifeq ($(OS), Windows_NT)
-    TRUNK_CONFIG_FILE = Trunk.win.toml
-    TRUNK_RELEASE_CONFIG_FILE = Trunk-release.win.toml
+# Determine TRUNK_CONFIG_FILE based on OS type
+ifeq ($(shell uname -s), Linux)
+    TRUNK_CONFIG_FILE := Trunk.toml
+    TRUNK_RELEASE_CONFIG_FILE := Trunk.toml
 else
-    TRUNK_CONFIG_FILE = Trunk.toml
-    TRUNK_RELEASE_CONFIG_FILE = Trunk.toml
+    TRUNK_CONFIG_FILE := Trunk.win.toml
+    TRUNK_RELEASE_CONFIG_FILE := Trunk-release.win.toml
 endif
 
-# build in release mode
 .PHONY: build
 build:
-	# build frontend
+	# Build frontend using trunk
 	trunk --config $(TRUNK_RELEASE_CONFIG_FILE) build
-	# build backend
+	# Build backend using cargo
 	cargo build --release --workspace --exclude frontend
 
-# run cargo check
 .PHONY: check
 check:
+	# Run cargo check for frontend wasm target
 	cargo check -p frontend --target wasm32-unknown-unknown
+	# Run cargo check for entire workspace excluding frontend
 	cargo check --workspace --exclude frontend
 
-# run cargo clippy
 .PHONY: clippy
 clippy:
+	# Run cargo clippy for frontend wasm target
 	cargo clippy -p frontend --target wasm32-unknown-unknown
+	# Run cargo clippy for entire workspace excluding frontend
 	cargo clippy --workspace --exclude frontend
 
-# run clippy fix
 .PHONY: fix
 fix:
-	cargo clippy -p frontend --fix --target wasm32-unknown-unknown --allow-dirty
-	cargo clippy --workspace --fix --exclude frontend --allow-dirty
+	# Run cargo clippy fix for frontend wasm target
+	cargo clippy -p frontend --fix --target wasm32-unknown-unknown
+	# Run cargo clippy fix for entire workspace excluding frontend
+	cargo clippy --workspace --fix --exclude frontend
 
-# build docs. use --open to open in browser
 .PHONY: doc
 doc:
+	# Build documentation using cargo doc
 	cargo doc -F docbuild $(ARGS)
 
-# run frontend devserver. use --open to open a new browser
+# .PHONY: serve-frontend
+# serve-frontend:
+# 	# Run frontend devserver using trunk
+# 	trunk --config $(TRUNK_CONFIG_FILE) serve $(ARGS)
+
+.PHONY: serve-tailwind
+serve-tailwind:
+	# Run frontend devserver using tailwind
+	cd frontend && npx tailwindcss -i ./input.css -o ./assets/tailwind.css --watch
 .PHONY: serve-frontend
 serve-frontend:
-	trunk --config $(TRUNK_CONFIG_FILE) serve $(ARGS)
+	# Run frontend devserver using dioxus
+	cd frontend && dx serve
 
-# run API server
 .PHONY: serve-api
 serve-api:
-	cargo run -p uchat_server $(ARGS)
+	# Run API server using cargo watch
+	cargo watch -x 'run -p uchat_server'
 
-# set up project dependencies
 .PHONY: init
 init:
+	# Set up project dependencies
 	cargo run -p project-init
 	cd frontend && npm install
 
-# migration related commands
-# apply migrations
 .PHONY: db-migrate
 db-migrate:
+	# Apply migrations using diesel
 	diesel migration run
-	# test migration
 	diesel migration redo
 	psql -d postgres -c 'DROP DATABASE uchat_test;'
 
-# reset the database
 .PHONY: db-reset
 db-reset:
+	# Reset the database using diesel
 	diesel database reset
 	psql -d postgres -c 'DROP DATABASE uchat_test;' || true
 
-# create a new database migration
 .PHONY: db-new-migration
 db-new-migration:
+	# Create a new database migration using diesel
 	diesel migration generate $(NAME)
