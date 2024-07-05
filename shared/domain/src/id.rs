@@ -1,15 +1,26 @@
+use diesel::{expression::AsExpression, pg::Pg, serialize::ToSql};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use diesel::deserialize::{self, FromSql};
+use diesel::pg::PgValue;
+use diesel::serialize::{self, Output};
+use diesel::sql_types::Uuid as SqlUuid;
+
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, 
-    PartialEq, Eq, PartialOrd, Ord, Hash
+    PartialEq, Eq, PartialOrd, Ord, Hash, AsExpression
 )]
-#[cfg_attr(feature = "query", derive())]
+#[diesel(sql_type = diesel::sql_types::Uuid)]
+#[cfg_attr(features = "query", derive(DieselNewType))]
 pub struct UserId(Uuid);
 
 impl UserId {
     pub fn new() -> Self {
         Self(uuid::Uuid::new_v4())  
+    }
+
+    pub fn into_inner(self) -> Uuid {
+        self.0
     }
 
     pub fn as_uuid(&self) -> &Uuid {
@@ -43,8 +54,21 @@ impl std::str::FromStr for UserId {
     }
 }
 
+
 #[derive(Debug, thiserror::Error)]
 pub enum IdError {
     #[error("Failed to parse id")]
     Parse
+}
+
+impl ToSql<SqlUuid, Pg> for UserId {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        <Uuid as ToSql<SqlUuid, Pg>>::to_sql(&self.0, out)
+    }
+}
+
+impl FromSql<SqlUuid, Pg> for UserId {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        <Uuid as FromSql<SqlUuid, Pg>>::from_sql(bytes).map(UserId)
+    }
 }

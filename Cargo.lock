@@ -3733,6 +3733,7 @@ dependencies = [
  "tokio",
  "tracing",
  "uchat_crypto",
+ "uchat_domain",
  "url",
  "uuid",
 ]
