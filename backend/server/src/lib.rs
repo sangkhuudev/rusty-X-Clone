@@ -3,8 +3,10 @@ use anyhow::Result;
 use rand::rngs::StdRng;
 use uchat_crypto::sign::Keys;
 use uchat_query::{AsyncConnection, AsyncConnectionPool, QueryError};
+
 pub mod logging;
 pub mod router;
+pub mod error;
 #[derive(FromRef, Clone)]
 pub struct AppState {
     pub db_pool: AsyncConnectionPool,

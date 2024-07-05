@@ -1,0 +1,13 @@
+[package]
+name = "uchat_endpoint"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"]}
+serde = {version = "1", features = ["derive"]}
+load-dotenv = "0.1.2"
+thiserror = "1.0.61"
+url = { version = "2.5.2", features = ["serde"] }
+uuid = { version = "1.9.1", features = ["v4", "serde", "js"] }
+uchat_domain = {path = "../domain"}

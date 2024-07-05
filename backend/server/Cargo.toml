@@ -40,6 +40,7 @@ url = { version = "2.5.2", features = ["serde"] }
 uuid = { version = "1.9.1", features = ["v4", "serde"] }
 
 uchat_cookie = { path = "../../shared/cookie" }
+uchat_endpoint = { path = "../../shared/endpoint"}
 uchat_crypto = { path = "../crypto" }
 uchat_query = { path = "../query" }
 
