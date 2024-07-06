@@ -2,16 +2,16 @@ use axum::{
     async_trait,
     extract::FromRequestParts,
     http::{request::Parts, StatusCode},
-    Extension, RequestPartsExt, 
+    Extension, RequestPartsExt,
 };
 use uchat_query::OwnedAsyncConnection;
 
 use crate::AppState;
 
-pub struct Dbconnection(pub OwnedAsyncConnection);
+pub struct DbConnection(pub OwnedAsyncConnection);
 
 #[async_trait]
-impl<S> FromRequestParts<S> for Dbconnection
+impl<S> FromRequestParts<S> for DbConnection
 where
     S: Sync + Send,
 {

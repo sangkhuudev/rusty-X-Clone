@@ -1,6 +1,6 @@
 use axum::{
     http::{header::CONTENT_TYPE, HeaderValue, Method},
-    routing::get,
+    routing::{get, post},
     Router,
 };
 use tower::ServiceBuilder;
@@ -9,11 +9,14 @@ use tower_http::{
     trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
 };
 use tracing::Level;
+use uchat_endpoint::{user::endpoint::CreateUser, Endpoint};
 
-use crate::AppState;
+use crate::{handler::with_public_handler, AppState};
 
 pub async fn new_router(state: AppState) -> Router {
-    let public_router = Router::new().route("/", get(move || async { "This is a route page" }));
+    let public_router = Router::new()
+        .route("/", get(move || async { "This is a route page" }))
+        .route(CreateUser::URL, post(with_public_handler::<CreateUser>));
     let authorized_router = Router::new();
     Router::new()
         .merge(public_router)
