@@ -4,7 +4,7 @@ use dotenvy::dotenv;
 use tracing::{debug, info};
 use uchat_crypto::new_rng;
 use uchat_query::AsyncConnectionPool;
-use uchat_server::{cli::{gen_keys, load_keys}, logging::Verbosity, router::new_router, AppState};
+use uchat_server::{cli::{gen_keys, load_keys}, logging::{setup, Verbosity}, router::new_router, AppState};
 use anyhow::{Result, Context};
 
 #[derive(Debug, Parser)]
@@ -19,15 +19,18 @@ struct Cli {
         env = "API_DATABASE_URL"
     )]
     database_url: String,
+
     #[clap(
         short,
         long,
-        default_value = "localhost:8080",
+        default_value = "127.0.0.1:8000",
         env = "API_BIND"
     )]
     bind: SocketAddr,
+
     #[clap(flatten)]
     verbosity: Verbosity,
+
     #[command(subcommand)]
     command: Option<Command>,
 }
@@ -41,10 +44,10 @@ enum Command {
 
 
 async fn run() -> Result<()> {
-    // color_eyre::install()?;
     let use_dotenv = dotenv();
     let args = Cli::parse();
-
+    setup(args.verbosity);
+    
     if let Ok(path) = use_dotenv {
         debug!(target: "uchat_server", dot_env_found = true, path = %path.to_string_lossy())
     } else {
@@ -68,7 +71,7 @@ async fn run() -> Result<()> {
 
     debug!(target: "uchat_server", "loading signing keys");
     let signing_keys = load_keys()?;
-    info!(target: "uchat_server", database_url = %args.database_url, "connecting to database");
+    info!(target: "uchat_server", database_url = %args.database_url, "connecting to postgres database");
     let db_pool = AsyncConnectionPool::new(&args.database_url)
         .await
         .with_context(|| "Check database url")
@@ -81,19 +84,14 @@ async fn run() -> Result<()> {
         rng: new_rng()
     };
 
-    info!(target: "uchat_server", bind_addr = %args.bind);
+    info!(target: "uchat_server", bind_addr = %args.bind, "Backend server is up and running at ");
     let router = new_router(state).await;
     let listener = tokio::net::TcpListener::bind(&args.bind)
         .await
-        // .wrap_error_with(|| "Failed to initialize server")
         .with_context(|| "Check bind address")
         .with_context(|| "Check if another service using this port")?;
-    // let server = listener.serve(router.await.into_make_service());
+    axum::serve(listener, router.into_make_service()).await?;
 
-    // if let Err(e) = server.await {
-    //     error!(target: "uchat_server", server_error = %e);
-    // }
-    axum::serve(listener, router).await?;
     Ok(())
 }
 

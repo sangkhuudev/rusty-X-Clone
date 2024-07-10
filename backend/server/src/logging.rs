@@ -1,5 +1,6 @@
 use clap::Args;
 
+use tracing::info;
 use tracing_subscriber::{filter::LevelFilter, prelude::*, EnvFilter};
 
 #[derive(Debug, Args)]
@@ -16,7 +17,7 @@ pub struct Verbosity {
 impl From<Verbosity> for LevelFilter {
     fn from(v: Verbosity) -> Self {
         // default to INFO (3)
-        let verbosity = (3 + v.verbose).saturating_sub(v.quieter);
+        let verbosity = (5 + v.verbose).saturating_sub(v.quieter);
         match verbosity {
             0 => LevelFilter::OFF,
             1 => LevelFilter::ERROR,
@@ -30,6 +31,8 @@ impl From<Verbosity> for LevelFilter {
 
 pub fn setup(verbosity: Verbosity) {
     use tracing_error::ErrorLayer;
+
+    info!("Setting up logging with verbosity: {:?}", verbosity);
 
     if std::env::var("API_LOG").is_ok() {
         tracing_subscriber::registry()
@@ -47,4 +50,6 @@ pub fn setup(verbosity: Verbosity) {
             .with(ErrorLayer::default())
             .init();
     }
+
+    info!("Logging setup complete");
 }

@@ -5,13 +5,13 @@ pub mod register;
 pub use home::{Blog, Home};
 pub use not_found::PageNotFound;
 pub use register::Register;
-pub use route::*;
+// pub use route::*;
 
 use dioxus::prelude::*;
 
-pub mod route {
-    pub const ACCOUNT_REGISTER: &str = "account/register";
-}
+// pub mod route {
+//     pub const ACCOUNT_REGISTER: &str = "/account/register";
+// }
 
 #[derive(Routable, Clone, Debug, PartialEq)]
 #[rustfmt::skip]

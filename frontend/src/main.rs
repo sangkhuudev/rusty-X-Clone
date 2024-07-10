@@ -11,16 +11,18 @@ pub mod util;
 use app::App;
 use dioxus::prelude::*;
 use tracing::Level;
+use util::ApiClient;
 
-pub const ROOT_API_URL: &str = "http://127.0.0.1:8080/";
+pub const ROOT_API_URL: &str = "http://127.0.0.1:8000/";
 
 fn main() {
     // Init logger
-    dioxus_logger::init(Level::INFO).expect("failed to init logger");
+    dioxus_logger::init(Level::DEBUG).expect("failed to init logger");
+    ApiClient::init();
     launch(App);
 }
 
 mod prelude {
-    pub use crate::page;
+    // pub use crate::page;
     pub use crate::util::{async_handler, sync_handler};
 }

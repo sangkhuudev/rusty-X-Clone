@@ -21,5 +21,5 @@ pub async fn with_public_handler<'a, Req>(
 ) where
     Req: PublicApiRequest + Deserialize<'a>,
 {
-    payload.process_request(conn, state).await;
+    let _ = payload.process_request(conn, state).await;
 }

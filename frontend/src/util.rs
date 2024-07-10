@@ -3,6 +3,7 @@ pub mod cookie;
 pub use api_client::ApiClient;
 
 use serde::Deserialize;
+use uchat_endpoint::RequestFailed;
 use wasm_bindgen::JsCast;
 use web_sys::{History, HtmlDocument, Window};
 
@@ -10,6 +11,9 @@ use web_sys::{History, HtmlDocument, Window};
 pub enum RequestError {
     #[error("request error: {0}")]
     Request(#[from] reqwest::Error),
+
+    #[error("bad request error: {0}")]
+    BadRequest(#[from] RequestFailed),
 
     #[error("request timeout")]
     Timeout,
@@ -21,41 +25,29 @@ pub struct ApiResponse {
     status: String,
 }
 
-#[macro_export]
-macro_rules! maybe_class {
-    ($class:expr, $condition:expr) => {
-        if $condition {
-            $class
-        } else {
-            ""
-        }
-    };
-}
-pub use maybe_class;
-
 // #[macro_export]
 // macro_rules! async_handler {
-//     (&$cx:ident, [$($cap:ident),*],  move |$($args:tt : $types:ty),*| $body:expr) => {
+//     ([$($cap:ident),*],  move |$($args:tt : $types:ty),*| $body:expr) => {
 //         move |$($args),*| {
 //             $(
 //                 #[allow(unused_mut)]
-//                 let mut $cap = $cap.to_owned();
+//                 let mut $cap = $cap;
 //             )*
-//             $cx.spawn($body);
+//             spawn(async move { $body; () });
 //         }
 //     };
-//     (&$cx:ident, [$($cap:ident),*],  move |$($args:tt),*| $body:expr) => {
+//     ([$($cap:ident),*],  move |$($args:tt),*| $body:expr) => {
 //         move |$($args),*| {
 //             $(
 //                 #[allow(unused_mut)]
-//                 let mut $cap = $cap.to_owned();
+//                 let mut $cap = $cap;
 //             )*
-//             $cx.spawn($body);
+//             spawn(async move { $body; () });
 //         }
 //     };
-//     (&$cx:ident, move |$($args:tt),*| $body:expr) => {
+//     (move |$($args:tt),*| $body:expr) => {
 //         move |$($args),*| {
-//             $cx.spawn($body);
+//             spawn(async move { $body; () });
 //         }
 //     };
 // }
@@ -63,56 +55,32 @@ pub use maybe_class;
 #[macro_export]
 macro_rules! async_handler {
     ([$($cap:ident),*], move |$($args:tt : $types:ty),*| $body:expr) => {
-        move |$($args: $types),*| {
+        move |$($args : $types),*| {
             $(
-                let $cap = $cap.clone();
+                #[allow(unused_mut)]
+                let mut $cap = $cap
             )*
-            wasm_bindgen_futures::spawn_local($body);
+            spawn(async move { $body });
         }
     };
     ([$($cap:ident),*], move |$($args:tt),*| $body:expr) => {
         move |$($args),*| {
             $(
-                let $cap = $cap.clone();
+                #[allow(unused_mut)]
+                let mut $cap = $cap;
             )*
-            wasm_bindgen_futures::spawn_local($body);
+            spawn({ async move {$body} });
         }
     };
     (move |$($args:tt),*| $body:expr) => {
         move |$($args),*| {
-            wasm_bindgen_futures::spawn_local($body);
+            spawn(async move { $body });
         }
     };
 }
 
 pub use async_handler;
 
-// #[macro_export]
-// macro_rules! sync_handler {
-//     ([$($cap:ident),*],  move |$($args:tt : $types:ty),*| $body:expr) => {
-//         move |$($args: $types),*| {
-//             $(
-//                 #[allow(unused_mut)]
-//                 let mut $cap = $cap.to_owned();
-//             )*
-//             $body
-//         }
-//     };
-//     ([$($cap:ident),*],  move |$($args:tt),*| $body:expr) => {
-//         move |$($args),*| {
-//             $(
-//                 #[allow(unused_mut)]
-//                 let mut $cap = $cap.to_owned();
-//             )*
-//             $body
-//         }
-//     };
-//     (move |$($args:tt),*| $body:expr) => {
-//         move |$($args),*| {
-//             $body
-//         }
-//     };
-// }
 #[macro_export]
 macro_rules! sync_handler {
     ([$($cap:ident),*], move |$($args:tt : $types:ty),*| $body:expr) => {
@@ -137,15 +105,6 @@ macro_rules! sync_handler {
         }
     };
 }
-
-// #[macro_export]
-// macro_rules! sync_handler {
-//     (move |$($args:tt),*| $body:expr) => {
-//         move |$($args),*| {
-//             $body // Closure body
-//         }
-//     };
-// }
 
 pub use sync_handler;
 

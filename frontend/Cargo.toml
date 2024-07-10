@@ -1,5 +1,5 @@
 [package]
-name = "front"
+name = "frontend"
 version = "0.1.0"
 authors = ["Khuu Viet Sang <sangkhuudev@gmail.com>"]
 edition = "2021"
@@ -15,7 +15,7 @@ tracing = "0.1.40"
 dioxus-logger = "0.5.0"
 chrono = { version = "0.4.26", features = ["serde"] }
 console_log = { version = "1.0", optional = true, features = ["color"] }
-
+# tokio = { version = "1.25.0", features = ["full"]}
 fermi = "0.4.3"
 futures = "0.3.28"
 gloo-file = { version = "0.3.0", features = ["futures"] }
@@ -44,12 +44,14 @@ web-sys = { version = "0.3.64", features = [
     "Window",
 ] }
 wasm-bindgen = "0.2.92"
+wasm-bindgen-futures = "0.4.42"
 
 # needed to build docs (bug in interprocess crate transitive dependency)
 interprocess = { version = "1.2.1", features = ["tokio"], optional = true }
 
 uchat_cookie = { path = "../shared/cookie" }
-uchat_domain = { path = "../shared/domain" }
+uchat_domain = { path = "../shared/domain", features = ["query"]}
+uchat_endpoint = { path = "../shared/endpoint"}
 
 [features]
 default = ["console_log"]

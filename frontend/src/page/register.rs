@@ -1,9 +1,12 @@
 #![allow(non_snake_case)]
 
 use crate::elements::keyed_notifications_box::{KeyedNotifications, KeyedNotificationsBox};
-use crate::prelude::*;
+use crate::util::ApiClient;
+use crate::{fetch_json, prelude::*};
 use dioxus::prelude::*;
 use uchat_domain::{Password, Username};
+use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk};
+
 
 pub struct PageState {
     pub username: Signal<String>,
@@ -40,7 +43,7 @@ pub fn UsernameInput(state: Signal<String>, oninput: EventHandler<FormEvent>) ->
                 name: "username",
                 class: "input-field",
                 placeholder: "User name",
-                value: "{state.read().clone()}",
+                value: "{state.read()}",
                 oninput: move |ev| oninput.call(ev),
 
             }
@@ -63,7 +66,7 @@ pub fn PasswordInput(state: Signal<String>, oninput: EventHandler<FormEvent>) ->
                 name: "password",
                 class: "input-field",
                 placeholder: "Password",
-                value: "{state.read().clone()}",
+                value: "{state.read()}",
                 oninput: move |ev| oninput.call(ev),
 
             }
@@ -71,11 +74,30 @@ pub fn PasswordInput(state: Signal<String>, oninput: EventHandler<FormEvent>) ->
     }
 }
 
+#[component]
 pub fn Register() -> Element {
+    let api_client = ApiClient::global();
     let page_state = PageState::new();
     let page_state = use_signal(|| page_state);
+
+    let form_onsubmit = async_handler!([api_client, page_state], move |_| {
+        let request_data = CreateUser {
+            username: Username::try_new(page_state.with(|state| state.username.read().to_string()))
+                .unwrap(),
+            password: Password::try_new(page_state.with(|state| state.password.read().to_string()))
+                .unwrap(),
+        };
+        tracing::info!("Submitting form with data: {:?}", request_data);
+        let response = fetch_json!(<CreateUserOk>, api_client, request_data);
+    
+        match response {
+            Ok(_resp) => tracing::info!("Form submitted successfully"),
+            Err(_err) => tracing::error!("Error submitting form: {:?}", _err),
+        }
+    });
+    
     let username_oninput = sync_handler!([page_state], move |ev: FormEvent| {
-        if let Err(e) = Username::new(&ev.value()) {
+        if let Err(e) = Username::try_new(&ev.value()) {
             page_state.with_mut(|state| state.form_error.set("Bad username", e.to_string()));
         } else {
             page_state.with_mut(|state| state.form_error.remove("Bad username"));
@@ -84,7 +106,7 @@ pub fn Register() -> Element {
     });
 
     let password_oninput = sync_handler!([page_state], move |ev: FormEvent| {
-        if let Err(e) = Password::new(&ev.value()) {
+        if let Err(e) = Password::try_new(&ev.value()) {
             page_state.with_mut(|state| state.form_error.set("Bad password", e.to_string()));
         } else {
             page_state.with_mut(|state| state.form_error.remove("Bad password"));
@@ -95,27 +117,31 @@ pub fn Register() -> Element {
         false => "btn-disabled",
         true => "",
     };
-
     rsx! {
         form {
             class: "flex flex-col gap-5",
             prevent_default: "onsubmit",
-            onsubmit: move |_| {
+            onsubmit: form_onsubmit,
 
-            },
+            // Username input component
             UsernameInput {
-                state: page_state.with(|state| state.username.clone()),
+                state: page_state.with(|state| state.username),
                 oninput: username_oninput
             },
 
+            // Password input component
             PasswordInput {
-                state: page_state.with(|state| state.password.clone()),
+                state: page_state.with(|state| state.password),
                 oninput: password_oninput
             },
+
+            // Error notifications component
             KeyedNotificationsBox {
                 legend: "Form errors",
                 notification: page_state.with(|state| state.form_error.clone())
-            }
+            },
+
+            // Submit button
             button {
                 class: "btn {btn_submit_style}",
                 r#type: "submit",

@@ -1,6 +1,17 @@
-use futures::Future;
+use std::time::Duration;
 use once_cell::sync::OnceCell;
+use reqwest::{Client, Response};
 use serde::Serialize;
+use futures::{
+    future::{select, Either},
+    pin_mut,
+    Future
+};
+use gloo_timers::future::TimeoutFuture;
+// use tokio::time;
+// use std::future::Future;
+
+use crate::ROOT_API_URL;
 
 use super::RequestError;
 
@@ -8,11 +19,11 @@ pub static API_CLIENT: OnceCell<ApiClient> = OnceCell::new();
 
 #[derive(Clone, Debug, Default)]
 pub struct ApiClient {
-    pub inner: reqwest::Client,
+    pub inner: Client,
 }
 
 impl ApiClient {
-    pub fn new(client: reqwest::Client) -> Self {
+    pub fn new(client: Client) -> Self {
         Self { inner: client }
     }
 
@@ -20,12 +31,12 @@ impl ApiClient {
         &self,
         endpoint: &str,
         json: &T,
-        timeout: std::time::Duration,
-    ) -> Result<reqwest::Response, RequestError>
+        timeout_duration: Duration,
+    ) -> Result<Response, RequestError>
     where
         T: Serialize + ?Sized,
     {
-        post_json(self.clone(), endpoint, json, timeout).await
+        post_json(self.clone(), endpoint, json, timeout_duration).await
     }
 
     pub fn global() -> &'static ApiClient {
@@ -46,8 +57,8 @@ async fn post_json<T>(
     client: ApiClient,
     endpoint: &str,
     json: &T,
-    timeout: std::time::Duration,
-) -> Result<reqwest::Response, RequestError>
+    timeout_duration: Duration,
+) -> Result<Response, RequestError>
 where
     T: Serialize + ?Sized,
 {
@@ -62,39 +73,43 @@ where
             .send()
             .await
     };
-    make_request(api_request, timeout).await
+    make_request(api_request, timeout_duration).await
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-async fn post_json<T>(
+pub async fn post_json<T>(
     client: ApiClient,
     endpoint: &str,
     json: &T,
-    timeout: std::time::Duration,
-) -> Result<reqwest::Response, RequestError>
+    timeout_duration: Duration,
+) -> Result<Response, RequestError>
 where
     T: Serialize + ?Sized,
 {
     let url = make_absolute_url(endpoint);
 
     let api_request = async { client.inner.post(url).json(json).send().await };
-    make_request(api_request, timeout).await
+    make_request(api_request, timeout_duration).await
 }
 
 fn make_absolute_url(endpoint: &str) -> reqwest::Url {
-    let url = reqwest::Url::parse(crate::ROOT_API_URL).unwrap();
-    url.join(endpoint).unwrap()
+    let base_url = reqwest::Url::parse(ROOT_API_URL).unwrap();
+    base_url.join(endpoint).unwrap()
 }
+
+#[test]
+fn test_make_absolute_url() {
+    let full_url = make_absolute_url("/account/create");
+    // Convert the full URL to a string and compare with the expected string
+    assert_eq!(full_url.as_str(), "http://127.0.0.1:8000/account/create");
+}
+
+
 
 async fn make_request(
     api_request: impl Future<Output = Result<reqwest::Response, reqwest::Error>>,
     timeout: std::time::Duration,
 ) -> Result<reqwest::Response, RequestError> {
-    use futures::{
-        future::{select, Either},
-        pin_mut,
-    };
-    use gloo_timers::future::TimeoutFuture;
     pin_mut!(api_request);
 
     let timeout_ms = timeout.as_millis() as u32;
@@ -110,22 +125,33 @@ async fn make_request(
     }
 }
 
+
 #[macro_export]
 macro_rules! fetch_json {
     (<$target:ty>, $client:ident, $request:expr) => {{
-        use uchat_api::Endpoint;
+        use uchat_endpoint::Endpoint;
         use $crate::util::RequestError;
         let duration = std::time::Duration::from_millis(6000);
         let response = $client
-            .post_json($request.self_url(), &$request, duration)
+            .post_json($request.url(), &$request, duration)
             .await;
         match response {
             Ok(res) => {
                 if res.status().is_success() {
                     Ok(res.json::<$target>().await.unwrap())
                 } else {
-                    let err_payload = res.json::<uchat_api::RequestFailed>().await.unwrap();
-                    Err(RequestError::BadRequest(err_payload))
+                    let status = res.status();
+                    match res.json::<uchat_endpoint::RequestFailed>().await {
+                        Ok(payload) => Err(RequestError::BadRequest(payload)),
+                        Err(_) => Err(RequestError::BadRequest(uchat_endpoint::RequestFailed {
+                            msg: {
+                                status
+                                    .canonical_reason()
+                                    .unwrap_or_else(|| "An error occurred. Please try again.")
+                                    .to_string()
+                            },
+                        })),
+                    }
                 }
             }
             Err(e) => Err(e),
@@ -133,3 +159,5 @@ macro_rules! fetch_json {
     }};
 }
 pub use fetch_json;
+
+

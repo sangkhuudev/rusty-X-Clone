@@ -6,7 +6,7 @@ use axum::{
 use tower::ServiceBuilder;
 use tower_http::{
     cors::CorsLayer,
-    trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
+    trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer}, LatencyUnit,
 };
 use tracing::Level;
 use uchat_endpoint::{user::endpoint::CreateUser, Endpoint};
@@ -17,6 +17,7 @@ pub async fn new_router(state: AppState) -> Router {
     let public_router = Router::new()
         .route("/", get(move || async { "This is a route page" }))
         .route(CreateUser::URL, post(with_public_handler::<CreateUser>));
+
     let authorized_router = Router::new();
     Router::new()
         .merge(public_router)
@@ -26,12 +27,16 @@ pub async fn new_router(state: AppState) -> Router {
                 .layer(
                     TraceLayer::new_for_http()
                         .make_span_with(DefaultMakeSpan::new().include_headers(true))
-                        .on_request(DefaultOnRequest::new().level(Level::INFO))
-                        .on_response(DefaultOnResponse::new().level(Level::INFO)), // .latency_unit(LatencyUnit::Micros)
+                        .on_request(DefaultOnRequest::new().level(Level::DEBUG))
+                        .on_response(
+                            DefaultOnResponse::new().level(Level::DEBUG)
+                            .latency_unit(LatencyUnit::Micros)
+                            .include_headers(true),
+                        ), 
                 )
                 .layer(
                     CorsLayer::new()
-                        .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::PUT])
+                        .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
                         .allow_credentials(true)
                         .allow_origin(
                             std::env::var("FRONTEND_URL")
@@ -41,6 +46,7 @@ pub async fn new_router(state: AppState) -> Router {
                         )
                         .allow_headers([CONTENT_TYPE]),
                 )
+                // .layer(cors)
                 .layer(axum::Extension(state.clone())),
         )
         .with_state(state)
