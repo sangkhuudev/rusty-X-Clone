@@ -5,7 +5,7 @@ use crate::util::ApiClient;
 use crate::{fetch_json, prelude::*};
 use dioxus::prelude::*;
 use uchat_domain::{Password, Username};
-use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk};
+use uchat_endpoint::user::endpoint::{Login, LoginOk};
 
 
 pub struct PageState {
@@ -75,25 +75,13 @@ pub fn PasswordInput(state: Signal<String>, oninput: EventHandler<FormEvent>) ->
 }
 
 #[component]
-pub fn Register() -> Element {
+pub fn Login() -> Element {
     let api_client = ApiClient::global();
     let page_state = PageState::new();
     let page_state = use_signal(|| page_state);
 
     let form_onsubmit = async_handler!([api_client, page_state], move |_| {
-        let request_data = CreateUser {
-            username: Username::try_new(page_state.with(|state| state.username.read().to_string()))
-                .unwrap(),
-            password: Password::try_new(page_state.with(|state| state.password.read().to_string()))
-                .unwrap(),
-        };
-        //tracing::info!("Submitting form with data: {:?}", request_data);
-        let response = fetch_json!(<CreateUserOk>, api_client, request_data);
-    
-        match response {
-            Ok(_resp) => tracing::info!("Form submitted successfully"),
-            Err(_err) => tracing::error!("Error submitting form: {:?}", _err),
-        }
+        
     });
     
     let username_oninput = sync_handler!([page_state], move |ev: FormEvent| {
@@ -146,7 +134,7 @@ pub fn Register() -> Element {
                 class: "btn {btn_submit_style}",
                 r#type: "submit",
                 disabled: !page_state.with(|state| state.can_submit()),
-                "Signup",
+                "Login",
             }
         }
     }

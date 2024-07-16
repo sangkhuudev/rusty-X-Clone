@@ -9,14 +9,16 @@ use tower_http::{
     trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer}, LatencyUnit,
 };
 use tracing::Level;
-use uchat_endpoint::{user::endpoint::CreateUser, Endpoint};
+use uchat_endpoint::{user::endpoint::{CreateUser, Login}, Endpoint};
 
 use crate::{handler::with_public_handler, AppState};
 
 pub async fn new_router(state: AppState) -> Router {
     let public_router = Router::new()
         .route("/", get(move || async { "This is a route page" }))
-        .route(CreateUser::URL, post(with_public_handler::<CreateUser>));
+        .route(CreateUser::URL, post(with_public_handler::<CreateUser>))
+        .route(Login::URL, post(with_public_handler::<Login>));
+
 
     let authorized_router = Router::new();
     Router::new()
