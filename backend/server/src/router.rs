@@ -3,6 +3,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
+
 use tower::ServiceBuilder;
 use tower_http::{
     cors::CorsLayer,
@@ -14,6 +15,7 @@ use uchat_endpoint::{user::endpoint::{CreateUser, Login}, Endpoint};
 use crate::{handler::with_public_handler, AppState};
 
 pub async fn new_router(state: AppState) -> Router {
+
     let public_router = Router::new()
         .route("/", get(move || async { "This is a route page" }))
         .route(CreateUser::URL, post(with_public_handler::<CreateUser>))
@@ -48,7 +50,6 @@ pub async fn new_router(state: AppState) -> Router {
                         )
                         .allow_headers([CONTENT_TYPE]),
                 )
-                // .layer(cors)
                 .layer(axum::Extension(state.clone())),
         )
         .with_state(state)

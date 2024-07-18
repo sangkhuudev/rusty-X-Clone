@@ -18,8 +18,9 @@ pub async fn with_public_handler<'a, Req>(
     conn: DbConnection,
     State(state): State<AppState>,
     Json(payload): Json<Req>,
-) where
+) -> ApiResult<Req::Response>
+where
     Req: PublicApiRequest + Deserialize<'a>,
 {
-    let _ = payload.process_request(conn, state).await;
+    payload.process_request(conn, state).await
 }

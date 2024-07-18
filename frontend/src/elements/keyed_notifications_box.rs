@@ -37,9 +37,7 @@ pub struct KeyedNotificationsProps {
 pub fn KeyedNotificationsBox(props: KeyedNotificationsProps) -> Element {
     let notifications = props.notification.message().map(|msg| {
         rsx! {
-            li {
-                "{msg}"
-            }
+            li { "{msg}" }
         }
     });
 
@@ -48,16 +46,9 @@ pub fn KeyedNotificationsBox(props: KeyedNotificationsProps) -> Element {
     match props.notification.has_message() {
         true => {
             rsx! {
-                fieldset {
-                    class: "fieldset border-red-300 rounded",
-                    legend {
-                        class: "border-red-300 px-4",
-                        "{legend}"
-                    }
-                    ul {
-                        class: "list-disc ml-4",
-                        {notifications}
-                    }
+                fieldset { class: "fieldset border-red-300 rounded",
+                    legend { class: "border-red-300 px-4", "{legend}" }
+                    ul { class: "list-disc ml-4", {notifications} }
                 }
             }
         }

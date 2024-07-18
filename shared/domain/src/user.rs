@@ -7,6 +7,6 @@ pub struct Username(String);
 
 #[nutype(
     validate(not_empty, len_char_min = 8),
-    derive(Clone, Serialize, Deserialize, PartialEq, AsRef)
+    derive(Clone, Debug, Serialize, Deserialize, PartialEq, AsRef)
 )]
 pub struct Password(String);

@@ -21,7 +21,7 @@ pub struct CreateUserOk {
     pub username: Username
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone,Debug, Serialize, Deserialize)]
 pub struct Login {
     pub username: Username,
     pub password: Password,

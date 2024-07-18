@@ -1,6 +1,10 @@
-use axum::{async_trait, http::StatusCode, Json};
+use axum::{
+    async_trait,
+    http::StatusCode,
+    Json,
+};
 use chrono::{Duration, Utc};
-use tracing::{info, Instrument};
+use tracing::{Instrument, info};
 use uchat_crypto::{encode_base64, hash_password, password::deserialize_hash, verify_password};
 use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk, Login, LoginOk};
 use uchat_query::{session, user::get_hashed_password};
@@ -27,7 +31,7 @@ impl PublicApiRequest for CreateUser {
         let user_id = uchat_query::user::new(&mut conn, hashed_password, &self.username)?;
 
         info!(
-            username = self.username.as_ref(),
+            username = %self.username.as_ref(),
             "New user created successfully."
         );
 
@@ -74,14 +78,11 @@ impl PublicApiRequest for Login {
             let signature = state
                 .signing_keys
                 .sign(&mut rng, session.id.as_uuid().as_bytes());
-            let signature = encode_base64(signature.to_string());
+            let signature = encode_base64(signature);
             (session, signature, session_duration)
         };
 
-        info!(
-            username = self.username.as_ref(),
-            "Login successfully."
-        );
+        info!(username = %self.username.as_ref(), "Login successfully.");
 
         Ok((
             StatusCode::OK,
@@ -92,8 +93,8 @@ impl PublicApiRequest for Login {
                 display_name: user.display_name,
                 email: user.email,
                 profile_image: None,
-                user_id: user.id
-            })
+                user_id: user.id,
+            }),
         ))
     }
 }

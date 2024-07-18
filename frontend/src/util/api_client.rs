@@ -8,8 +8,7 @@ use futures::{
     Future
 };
 use gloo_timers::future::TimeoutFuture;
-// use tokio::time;
-// use std::future::Future;
+
 
 use crate::ROOT_API_URL;
 
@@ -131,31 +130,31 @@ macro_rules! fetch_json {
     (<$target:ty>, $client:ident, $request:expr) => {{
         use uchat_endpoint::Endpoint;
         use $crate::util::RequestError;
+        use dioxus_logger::tracing::{error, info};
         let duration = std::time::Duration::from_millis(6000);
-        let response = $client
-            .post_json($request.url(), &$request, duration)
-            .await;
+        let response = $client.post_json($request.url(), &$request, duration).await;
         match response {
             Ok(res) => {
+                info!("Received response status: {}", &res.status());
                 if res.status().is_success() {
-                    Ok(res.json::<$target>().await.unwrap())
-                } else {
-                    let status = res.status();
-                    match res.json::<uchat_endpoint::RequestFailed>().await {
-                        Ok(payload) => Err(RequestError::BadRequest(payload)),
-                        Err(_) => Err(RequestError::BadRequest(uchat_endpoint::RequestFailed {
-                            msg: {
-                                status
-                                    .canonical_reason()
-                                    .unwrap_or_else(|| "An error occurred. Please try again.")
-                                    .to_string()
-                            },
-                        })),
+                    match res.json::<$target>().await {
+                        Ok(data) => Ok(data),
+                        Err(err) => {
+                            error!("Failed to parse JSON response: {:?}", err);
+                            Err(RequestError::Request(err))
+                        }
                     }
+                } else {
+                    let err_payload = res.json::<uchat_endpoint::RequestFailed>().await.unwrap();
+                    Err(RequestError::BadRequest(err_payload))
                 }
             }
-            Err(e) => Err(e),
+            Err(e) => {
+                error!("Request failed: {:?}", e);
+                Err(e.into()) // Convert reqwest::Error to RequestError
+            }
         }
+        
     }};
 }
 pub use fetch_json;

@@ -25,32 +25,6 @@ pub struct ApiResponse {
     status: String,
 }
 
-// #[macro_export]
-// macro_rules! async_handler {
-//     ([$($cap:ident),*],  move |$($args:tt : $types:ty),*| $body:expr) => {
-//         move |$($args),*| {
-//             $(
-//                 #[allow(unused_mut)]
-//                 let mut $cap = $cap;
-//             )*
-//             spawn(async move { $body; () });
-//         }
-//     };
-//     ([$($cap:ident),*],  move |$($args:tt),*| $body:expr) => {
-//         move |$($args),*| {
-//             $(
-//                 #[allow(unused_mut)]
-//                 let mut $cap = $cap;
-//             )*
-//             spawn(async move { $body; () });
-//         }
-//     };
-//     (move |$($args:tt),*| $body:expr) => {
-//         move |$($args),*| {
-//             spawn(async move { $body; () });
-//         }
-//     };
-// }
 
 #[macro_export]
 macro_rules! async_handler {
@@ -60,7 +34,7 @@ macro_rules! async_handler {
                 #[allow(unused_mut)]
                 let mut $cap = $cap
             )*
-            spawn(async move { $body });
+            spawn($body);   
         }
     };
     ([$($cap:ident),*], move |$($args:tt),*| $body:expr) => {
@@ -69,12 +43,11 @@ macro_rules! async_handler {
                 #[allow(unused_mut)]
                 let mut $cap = $cap;
             )*
-            spawn({ async move {$body} });
-        }
+            spawn($body);        }
     };
     (move |$($args:tt),*| $body:expr) => {
         move |$($args),*| {
-            spawn(async move { $body });
+            spawn($body);   
         }
     };
 }
