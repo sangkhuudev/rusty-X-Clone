@@ -25,6 +25,18 @@ pub struct ApiResponse {
     status: String,
 }
 
+#[macro_export]
+macro_rules! maybe_class {
+    ($class:expr, $condition:expr) => {
+        if $condition {
+            $class
+        } else {
+            ""
+        }
+    };
+}
+pub use maybe_class;
+
 
 #[macro_export]
 macro_rules! async_handler {

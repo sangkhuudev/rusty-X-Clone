@@ -1,5 +1,6 @@
+#![allow(non_snake_case)]
+
 use dioxus::prelude::*;
-// use log::{error, info};
 use crate::elements::keyed_notifications_box::{KeyedNotifications, KeyedNotificationsBox};
 use crate::page::Route;
 use crate::util::ApiClient;
@@ -96,7 +97,7 @@ pub fn Login() -> Element {
 
         match response {
             Ok(res) => {
-                info!("Login successful!");
+                info!("Login successfully!");
                 crate::util::cookie::set_session(
                     res.session_signature,
                     res.session_id,
@@ -106,9 +107,6 @@ pub fn Login() -> Element {
             }
             Err(err) => {
                 error!("Login failed: {:?}", err);
-                page_state.with_mut(|state| {
-                    state.form_error.set("Login failed", format!("Error: {:?}", err));
-                });
             }
         }
     });
@@ -143,21 +141,25 @@ pub fn Login() -> Element {
             // prevent_default: "onsubmit",
             onsubmit: form_onsubmit,
 
-            UsernameInput {
-                state: page_state.with(|state| state.username),
-                oninput: username_oninput
-            },
+            // Username input component
+            UsernameInput { 
+                state: page_state.with(|state| state.username), 
+                oninput: username_oninput 
+            }
 
-            PasswordInput {
-                state: page_state.with(|state| state.password),
-                oninput: password_oninput
-            },
+            // Password input component
+            PasswordInput { 
+                state: page_state.with(|state| state.password), 
+                oninput: password_oninput 
+            }
 
+            // Error notifications component
             KeyedNotificationsBox {
                 legend: "Form errors",
                 notification: page_state.with(|state| state.form_error.clone())
-            },
+            }
 
+            // Submit button 
             button {
                 class: "btn {btn_submit_style}",
                 r#type: "submit",

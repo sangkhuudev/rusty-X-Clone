@@ -1,12 +1,13 @@
 #![allow(non_snake_case)]
 
 use crate::elements::keyed_notifications_box::{KeyedNotifications, KeyedNotificationsBox};
+use crate::page::Route;
 use crate::util::ApiClient;
 use crate::{fetch_json, prelude::*};
 use dioxus::prelude::*;
+use dioxus_logger::tracing::{error, info};
 use uchat_domain::{Password, Username};
 use uchat_endpoint::user::endpoint::{CreateUser, CreateUserOk};
-
 
 pub struct PageState {
     pub username: Signal<String>,
@@ -69,23 +70,36 @@ pub fn Register() -> Element {
     let api_client = ApiClient::global();
     let page_state = PageState::new();
     let page_state = use_signal(|| page_state);
+    let router = router();
+    let form_onsubmit = async_handler!([api_client, page_state, router], move |_| async move {
+        info!("Register component initialized!");
 
-    let form_onsubmit = async_handler!([api_client, page_state], move |_| async move {
         let request_data = CreateUser {
             username: Username::try_new(page_state.with(|state| state.username.read().to_string()))
-                .unwrap(),
+                .expect("Username is not valid!"),
             password: Password::try_new(page_state.with(|state| state.password.read().to_string()))
-                .unwrap(),
+                .expect("There is somthing wrong with password"),
         };
+
         let response = fetch_json!(<CreateUserOk>, api_client, request_data);
-    
+
         match response {
-            Ok(_resp) => tracing::info!("Form submitted successfully"),
-            Err(_err) => tracing::error!("Error submitting form: {:?}", _err),
+            Ok(res) => {
+                info!("Register successfully.");
+                crate::util::cookie::set_session(
+                    res.session_signature,
+                    res.session_id,
+                    res.session_expires,
+                );
+
+                router.push(Route::Home);
+            }
+            Err(err) => error!("Error submitting form: {:?}", err),
         }
     });
-    
+
     let username_oninput = sync_handler!([page_state], move |ev: FormEvent| {
+        info!("Username input changed: {}", ev.value());
         if let Err(e) = Username::try_new(&ev.value()) {
             page_state.with_mut(|state| state.form_error.set("Bad username", e.to_string()));
         } else {
@@ -109,14 +123,20 @@ pub fn Register() -> Element {
     rsx! {
         form {
             class: "flex flex-col gap-5",
-            prevent_default: "onsubmit",
+            // prevent_default: "onsubmit",
             onsubmit: form_onsubmit,
 
             // Username input component
-            UsernameInput { state: page_state.with(|state| state.username), oninput: username_oninput }
+            UsernameInput { 
+                state: page_state.with(|state| state.username), 
+                oninput: username_oninput 
+            }
 
             // Password input component
-            PasswordInput { state: page_state.with(|state| state.password), oninput: password_oninput }
+            PasswordInput { 
+                state: page_state.with(|state| state.password), 
+                oninput: password_oninput 
+            }
 
             // Error notifications component
             KeyedNotificationsBox {

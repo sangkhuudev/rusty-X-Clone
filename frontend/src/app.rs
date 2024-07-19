@@ -1,8 +1,12 @@
+#![allow(non_snake_case)]
+
 use crate::page::Route;
 use dioxus::prelude::*;
+use crate::elements::*;
 
 pub fn App() -> Element {
     rsx! {
-        Router::<Route> {}
+        Router::<Route> {},
+        Navbar {}
     }
 }

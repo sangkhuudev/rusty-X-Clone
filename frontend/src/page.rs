@@ -15,14 +15,12 @@ use dioxus::prelude::*;
 #[rustfmt::skip]
 pub enum Route {
     #[route("/home")]
-    // #[redirect("/account/login", || Route::Home {})]
     Home,
 
     #[route("/account/register")]
     Register,
 
     #[route("/account/login")]
-    // #[redirect("/account/login", || Route::Home {})]
     Login,
 
     #[route("/:..route")]

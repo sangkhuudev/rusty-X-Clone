@@ -1,7 +1,7 @@
 [application]
 
 # App (Project) Name
-name = "front"
+name = "Rusty X Clone"
 
 # Dioxus App Default Platform
 # desktop, web
@@ -16,7 +16,8 @@ asset_dir = "assets"
 [web.app]
 
 # HTML title tag content
-title = "front"
+# HTML title tag content
+title = "🦀 | Rusty X Clone"
 
 [web.watcher]
 
