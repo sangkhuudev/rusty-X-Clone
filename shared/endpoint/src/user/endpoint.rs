@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use uchat_domain::{Password, SessionId, UserId, Username};
 use url::Url;
 
-use crate::Endpoint;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct CreateUser {
@@ -11,9 +10,6 @@ pub struct CreateUser {
     pub password: Password,
 }
 
-impl Endpoint for CreateUser {
-    const URL: &'static str = "/account/create";
-}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CreateUserOk {
@@ -28,10 +24,6 @@ pub struct CreateUserOk {
 pub struct Login {
     pub username: Username,
     pub password: Password,
-}
-
-impl Endpoint for Login {
-    const URL: &'static str = "/account/login";
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
