@@ -24,7 +24,7 @@ url = { version = "2.5.2" }
 uuid = { version = "1.9.1", features = ["v4", "serde"] }
 
 uchat_domain = { path = "../../shared/domain", features = ["query"]}
-
+uchat_endpoint = { path = "../../shared/endpoint"}
 [dependencies.diesel]
 features = [
     "postgres",

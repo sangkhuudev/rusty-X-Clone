@@ -10,9 +10,9 @@ use tower_http::{
     trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer}, LatencyUnit,
 };
 use tracing::Level;
-use uchat_endpoint::{user::endpoint::{CreateUser, Login}, Endpoint};
+use uchat_endpoint::{post::endpoint::NewPost, user::endpoint::{CreateUser, Login}, Endpoint};
 
-use crate::{handler::with_public_handler, AppState};
+use crate::{handler::{with_handler, with_public_handler}, AppState};
 
 pub async fn new_router(state: AppState) -> Router {
 
@@ -21,8 +21,8 @@ pub async fn new_router(state: AppState) -> Router {
         .route(CreateUser::URL, post(with_public_handler::<CreateUser>))
         .route(Login::URL, post(with_public_handler::<Login>));
 
+    let authorized_router = Router::new().route(NewPost::URL, post(with_handler::<NewPost>));
 
-    let authorized_router = Router::new();
     Router::new()
         .merge(public_router)
         .merge(authorized_router)
