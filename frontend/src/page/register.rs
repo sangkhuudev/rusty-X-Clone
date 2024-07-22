@@ -92,7 +92,7 @@ pub fn Register() -> Element {
                     res.session_expires,
                 );
 
-                router.push(Route::Home);
+                router.push(Route::Home {});
             }
             Err(err) => error!("Error submitting form: {:?}", err),
         }

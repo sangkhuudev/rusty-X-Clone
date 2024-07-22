@@ -103,7 +103,7 @@ pub fn Login() -> Element {
                     res.session_id,
                     res.session_expires,
                 );
-                router.push(Route::Home);
+                router.push(Route::Home {});
             }
             Err(err) => {
                 error!("Login failed: {:?}", err);

@@ -665,6 +665,10 @@ video {
   height: 100%;
 }
 
+.min-h-screen {
+  min-height: 100vh;
+}
+
 .w-28 {
   width: 7rem;
 }
@@ -675,6 +679,10 @@ video {
 
 .max-w-\[var\(--content-max-width\)\] {
   max-width: var(--content-max-width);
+}
+
+.flex-grow {
+  flex-grow: 1;
 }
 
 .cursor-pointer {

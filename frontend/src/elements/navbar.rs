@@ -1,11 +1,12 @@
 #![allow(non_snake_case)]
 
-use crate::prelude::*;
+use crate::{page::Route, prelude::*};
 use dioxus::prelude::*;
+use crate::icon::*;
 
 #[derive(Props, PartialEq, Clone)]
 pub struct NavButtonProps {
-    img: &'static str,
+    img: String,
     label: &'static str,
     onclick: EventHandler<MouseEvent>,
     highlight: Option<bool>,
@@ -19,6 +20,7 @@ pub const BUTTON_CLASS: &str = "grid grid-cols-[20px_1fr] gap-4 pl-4
 #[component]
 pub fn NewPostPopup(hide: Signal<bool>) -> Element {
     let hide_class = maybe_class!("hidden", *hide.read());
+
     rsx!(
         div {
             class: "flex flex-col absolute right-0 bottom-[var(--navbar-height)]
@@ -28,7 +30,7 @@ pub fn NewPostPopup(hide: Signal<bool>) -> Element {
                 onclick: move |_| {},
                 img {
                     class: "invert",
-                    src: "icon-poll.svg",
+                    src: "{ICON_POLL}"
                 }
                 "Poll"
             } 
@@ -37,16 +39,20 @@ pub fn NewPostPopup(hide: Signal<bool>) -> Element {
                 onclick: move |_| {},
                 img {
                     class: "invert",
-                    src: "icon-image.svg",
+                    src: "{ICON_IMAGE}",
                 }
                 "Image"
             }
             div {
                 class: BUTTON_CLASS,
-                onclick: move |_| {},
+                onclick: move |_| {
+                    // Redirect to /post/new_chat
+                    router().push(Route::NewChat {});    
+                    hide.set(true);
+                },
                 img {
                     class: "invert",
-                    src: "icon-messages.svg",
+                    src: "{ICON_MESSAGES}",
                 }
                 "Chat"
             }
@@ -54,6 +60,8 @@ pub fn NewPostPopup(hide: Signal<bool>) -> Element {
     )
 }
 
+
+#[component]
 pub fn NavButton(props: NavButtonProps) -> Element {
     let selected_bg_color = maybe_class!("bg-slate-500", matches!(props.highlight, Some(true)));
 
@@ -64,20 +72,20 @@ pub fn NavButton(props: NavButtonProps) -> Element {
             onclick: move |ev| props.onclick.call(ev),
             img {
                 class: "invert",
-                src: props.img,
+                src: "{props.img}",
                 width: "25px",
                 height: "25px",
             },
             div {
                 class: "text-sm text-white",
-                {props.label}
+                "{props.label}"
             },
             {&props.children}
-
         }
     )
 }
 
+#[component]
 pub fn Navbar() -> Element {
     let mut hide_new_post_popup = use_signal(|| true);
 
@@ -91,27 +99,33 @@ pub fn Navbar() -> Element {
                 full items-center shadow-inner",
 
                 NavButton {
-                    img: "icon-home.svg",
+                    img: "{ICON_HOME}",
                     label: "Home",
-                    onclick: move |_| {}
+                    onclick: move |_| { 
+                        // router().push(Route::Home);
+                    }
                 }
 
                 NavButton {
-                    img: "icon-trending.svg",
+                    img: "{ICON_TRENDING}",
                     label: "Trending",
-                    onclick: move |_| {}
+                    onclick: move |_| { 
+                        // router().push(Route::Login);
+                    }
                 }
 
                 NavButton {
-                    img: "icon-new-post.svg",
+                    img: "{ICON_POST}",
                     label: "Post",
                     onclick: move |_| {
                         let is_hidden = *hide_new_post_popup.read();
                         hide_new_post_popup.set(!is_hidden);
                     },
-                    NewPostPopup { hide: hide_new_post_popup.clone() }
+                    NewPostPopup { hide: hide_new_post_popup }
                 }
             }
         }
+        Outlet::<Route> {}
     )
 }
+

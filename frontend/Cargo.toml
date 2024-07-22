@@ -9,8 +9,8 @@ edition = "2021"
 [dependencies]
 
 dioxus = { version = "0.5.1", features = ["web", "router"] }
-cfg-if = "1"
 
+manganis = "0.2.2"
 # Debug
 tracing = "0.1.40"
 tracing-subscriber = "0.3"

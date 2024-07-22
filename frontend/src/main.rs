@@ -7,6 +7,7 @@ pub mod app;
 pub mod elements;
 pub mod page;
 pub mod util;
+pub mod icon;
 
 use app::App;
 use dioxus::prelude::*;

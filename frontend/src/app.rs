@@ -2,11 +2,10 @@
 
 use crate::page::Route;
 use dioxus::prelude::*;
-use crate::elements::*;
 
+#[component]
 pub fn App() -> Element {
     rsx! {
-        Router::<Route> {},
-        Navbar {}
-    }
+        Router::<Route> {}
+    }    
 }
