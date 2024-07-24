@@ -37,16 +37,15 @@ macro_rules! maybe_class {
 }
 pub use maybe_class;
 
-
 #[macro_export]
 macro_rules! async_handler {
     ([$($cap:ident),*], move |$($args:tt : $types:ty),*| $body:expr) => {
         move |$($args : $types),*| {
             $(
                 #[allow(unused_mut)]
-                let mut $cap = $cap
+                let mut $cap = $cap;
             )*
-            spawn($body);   
+            spawn($body);
         }
     };
     ([$($cap:ident),*], move |$($args:tt),*| $body:expr) => {
@@ -55,11 +54,12 @@ macro_rules! async_handler {
                 #[allow(unused_mut)]
                 let mut $cap = $cap;
             )*
-            spawn($body);        }
+            spawn($body);        
+        }
     };
     (move |$($args:tt),*| $body:expr) => {
         move |$($args),*| {
-            spawn($body);   
+            spawn($body);
         }
     };
 }

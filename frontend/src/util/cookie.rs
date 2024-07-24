@@ -9,7 +9,7 @@ use super::document;
 
 pub fn get_session() -> Option<SessionId> {
     let cookies = document().cookie().unwrap();
-    uchat_cookie::get_from_str(&cookies, "session_id").and_then(|id| SessionId::from_str(id).ok())
+    uchat_cookie::get_from_str(&cookies, "SESSION_ID").and_then(|id| SessionId::from_str(id).ok())
 }
 
 pub fn remove_session() {
@@ -65,3 +65,4 @@ fn format_cookie<S: AsRef<str>>(payload: S, expires: DateTime<Utc>) -> String {
     let cookie = format!("{payload}; {expires}; {options}");
     cookie
 }
+
