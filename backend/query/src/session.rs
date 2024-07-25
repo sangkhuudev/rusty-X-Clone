@@ -55,10 +55,27 @@ pub fn get(
     conn: &mut PgConnection,
     session_id: SessionId
 ) -> Result<Option<Session>, DieselError> {
-    web::table
+    tracing::debug!("Retrieving session with ID: {:?}", session_id);
+    
+    let session = web::table
         .filter(web::id.eq(session_id))
-        .get_result(conn)
-        .optional()
+        .get_result::<Session>(conn)
+        .optional()?;
+
+    tracing::debug!("Session retrieved: {:?}", session);
+
+    if let Some(ref s) = session {
+        if s.expires_at < Utc::now() {
+            tracing::debug!("Session has expired.");
+            return Ok(None);
+        } else {
+            tracing::debug!("Session is valid. Expires at: {:?}", s.expires_at);
+        }
+    } else {
+        tracing::debug!("Session not found.");
+    }
+
+    Ok(session)
 }
 
 pub fn find(
@@ -71,3 +88,4 @@ pub fn find(
         .filter(web::fingerprint.eq(fingerprint))
         .get_result(conn)
 }
+

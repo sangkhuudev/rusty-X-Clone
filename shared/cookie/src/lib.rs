@@ -1,5 +1,5 @@
-pub const SESSION_ID: &str = "session_id";
-pub const SESSION_SIGNATURE: &str = "session_signature";
+pub const SESSION_ID: &str = "SESSION_ID";
+pub const SESSION_SIGNATURE: &str = "SESSION_SIGNATURE";
 
 pub fn get_from_str<'a>(cookies: &'a str, key: &str) -> Option<&'a str> {
     cookies
@@ -22,7 +22,7 @@ mod tests {
 
     #[test]
     fn gets_cookie() {
-        let cookie_str = "session_id=de3da054-5eac-4ea6-959b-7b117188d883; some_other_cookie=test";
+        let cookie_str = "SESSION_ID=de3da054-5eac-4ea6-959b-7b117188d883; some_other_cookie=test";
         let session_id = get_from_str(cookie_str, SESSION_ID).expect("failed to get session_id");
         assert_eq!(session_id, "de3da054-5eac-4ea6-959b-7b117188d883");
 
