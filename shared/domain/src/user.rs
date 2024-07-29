@@ -10,3 +10,13 @@ pub struct Username(String);
     derive(Clone, Debug, Serialize, Deserialize, PartialEq, AsRef)
 )]
 pub struct Password(String);
+
+#[nutype(
+    validate(len_char_max = 20),
+    derive(Debug, Display, Clone, Serialize, Deserialize, PartialEq, AsRef)
+)]
+pub struct DisplayName(String);
+
+impl DisplayName {
+    pub const MAX_CHARS: usize = 30;
+}

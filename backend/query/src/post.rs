@@ -4,6 +4,7 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uchat_domain::{PostId, UserId};
 use uuid::Uuid;
+use crate::schema::posts;
 use crate::{schema, DieselError};
 use uchat_endpoint::post::types;
 
@@ -49,4 +50,19 @@ pub fn new(conn: &mut PgConnection, post: Post) -> Result<PostId, DieselError> {
             .execute(conn)?;
         Ok(post.id)
     })
+}
+
+pub fn get(conn: &mut PgConnection, post_id: PostId) -> Result<Post, DieselError> {
+    schema::posts::table
+        .filter(posts::columns::id.eq(post_id.as_uuid()))
+        .get_result(conn)
+}
+
+pub fn get_trending(conn: &mut PgConnection) -> Result<Vec<Post>, DieselError> {
+    schema::posts::table
+        .filter(posts::columns::time_posted.lt(Utc::now()))
+        .filter(posts::columns::direct_message_to.is_null())
+        .order(posts::columns::time_posted.desc())
+        .limit(30)
+        .get_results(conn)
 }

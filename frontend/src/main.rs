@@ -11,7 +11,7 @@ pub mod icon;
 
 use app::App;
 use dioxus::prelude::*;
-use page::Toaster;
+use page::{PostManager, Toaster};
 use util::ApiClient;
 use dioxus_logger::tracing::{Level, info};
 
@@ -19,6 +19,7 @@ use dioxus_logger::tracing::{Level, info};
 pub const ROOT_API_URL: &str = "http://127.0.0.1:8000/";
 
 pub static TOASTER: GlobalSignal<Toaster> = Signal::global(|| Toaster::default());
+pub static POSTMANAGER: GlobalSignal<PostManager> = Signal::global(|| PostManager::default());
 
 fn main() {
     dioxus_logger::init(Level::DEBUG).expect("failed to init logger");

@@ -1,4 +1,4 @@
-use post::endpoint::NewPost;
+use post::endpoint::{NewPost, TrendingPost};
 use serde::{Deserialize, Serialize};
 use user::endpoint::{CreateUser, Login};
 
@@ -32,3 +32,4 @@ route!("/account/login" => Login);
 
 // authorized routes
 route!("/post/new" => NewPost);
+route!("/posts/trending" => TrendingPost);

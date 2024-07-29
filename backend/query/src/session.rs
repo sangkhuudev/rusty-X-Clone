@@ -62,8 +62,6 @@ pub fn get(
         .get_result::<Session>(conn)
         .optional()?;
 
-    tracing::debug!("Session retrieved: {:?}", session);
-
     if let Some(ref s) = session {
         if s.expires_at < Utc::now() {
             tracing::debug!("Session has expired.");

@@ -3,11 +3,13 @@ pub mod not_found;
 pub mod register;
 pub mod login;
 pub mod new_post;
+pub mod trending;
 
 pub use home::Home;
 pub use not_found::PageNotFound;
 pub use register::Register;
 pub use login::Login;
+pub use trending::Trending;
 pub use new_post::*;
 pub use crate::elements::*;
 
@@ -29,6 +31,10 @@ pub enum Route {
 
         #[route("/post/new_chat")]
         NewChat {},
+
+        #[route("/posts/trending")]
+        Trending {},
+
     #[end_layout]
     #[route("/:..route")]
     PageNotFound {

@@ -78,8 +78,6 @@ where
         let cookies = parts.headers.get(COOKIE)
             .and_then(|header| header.to_str().ok());
 
-        tracing::debug!("Extracted cookies header: {:?}", cookies);
-
         match cookies {
             Some(cookies) => {
 

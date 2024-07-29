@@ -1,7 +1,9 @@
 #![allow(non_snake_case)]
 
 use crate::page::Route;
+use crate::TOASTER;
 use crate::{fetch_json, prelude::*, util::ApiClient};
+use chrono::Duration;
 use dioxus::prelude::*;
 use dioxus_logger::tracing::{error, info};
 use serde::{Deserialize, Serialize};
@@ -130,10 +132,13 @@ pub fn NewChat() -> Element {
         match response {
             Ok(_res) => {
                 info!("Post new chat successfully!");
+                TOASTER.write().success("Posted successfully", Duration::seconds(3));
                 router.replace(Route::Home {});
             }
-            Err(err) => {
-                error!("Post new chat failed: {:?}", err);
+            Err(e) => {
+                TOASTER
+                    .write()
+                    .error(format!("Posted failed: {e}"), Duration::seconds(3));
             }
         }
     });

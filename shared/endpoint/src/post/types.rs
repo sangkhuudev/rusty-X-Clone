@@ -1,6 +1,8 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uchat_domain::{Headline, Message, PostId, UserId};
+use uchat_domain::{Headline, Message, PostId, UserId, Username};
+
+use crate::user::types::PublicUserProfile;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Chat {
@@ -35,4 +37,27 @@ impl Default for NewPostOptions {
             time_posted: Utc::now()
         }
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum LikeStatus {
+    Like,
+    Dislike,
+    NoReaction,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PublicPost {
+    // Section 1: Allow us to see the post
+    pub id: PostId,
+    pub by_user: PublicUserProfile,
+    pub content: Content,
+    pub time_posted: DateTime<Utc>,
+    pub reply_to: Option<(Username, UserId, PostId)>,
+    // Section 2: Allow us to interact with post
+    pub like_status: LikeStatus,
+    pub bookmarked: bool,
+    pub boosted: bool,
+    pub likes: i64,
+    pub dislikes: i64,
+    pub boosts: i64,
 }

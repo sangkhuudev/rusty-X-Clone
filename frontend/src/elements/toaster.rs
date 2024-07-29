@@ -103,12 +103,10 @@ pub fn ToastRoot() -> Element {
     });
 
     let total_toasts =  TOASTER.signal();
-    info!("Number of toasts: {:?}", total_toasts.read().toasts.len());
 
     // use_future will run the future
     let _remove_ids = use_resource(move || async move {
         loop {
-            info!("Number of toasts in the loop: {:?}", total_toasts.read().toasts.len());
             if  total_toasts.read().toasts.len() == 0  {
                 break;
             }
@@ -122,7 +120,6 @@ pub fn ToastRoot() -> Element {
                     }
                 })
                 .collect::<Vec<usize>>();
-            info!("List of expired ids: {:?}", expired_ids);
             info!("The loop will be break after removing toasts ");
 
             expired_ids.iter().for_each(|&id| TOASTER.write().remove(id));
