@@ -2,6 +2,7 @@ use indexmap::IndexMap;
 use uchat_domain::PostId;
 use uchat_endpoint::post::types::PublicPost;
 
+pub mod content;
 #[derive(Default)]
 pub struct PostManager {
     pub posts: IndexMap<PostId, PublicPost>
