@@ -1,8 +1,9 @@
 use anyhow::anyhow;
 use axum::{async_trait, http::StatusCode, Json};
+use chrono::Utc;
 use uchat_domain::Username;
-use uchat_endpoint::{post::{endpoint::{Bookmark, BookmarkOk, NewPost, NewPostOk, TrendingPost, TrendingPostOk}, types::{BookmarkAction, LikeStatus, PublicPost}}, RequestFailed}; 
-use uchat_query::{post::Post, AsyncConnection};
+use uchat_endpoint::{post::{endpoint::{Bookmark, BookmarkOk, NewPost, NewPostOk, React, ReactOk, TrendingPost, TrendingPostOk}, types::{BookmarkAction, LikeStatus, PublicPost}}, RequestFailed}; 
+use uchat_query::{post::{Post, Reaction}, AsyncConnection};
 
 use crate::{error::{ApiError, ApiResult}, extractor::{DbConnection, UserSession}, AppState};
 
@@ -11,7 +12,7 @@ use super::AuthorizedApiRequest;
 pub fn to_public(
     conn: &mut AsyncConnection,
     post: Post,
-    _session: Option<&UserSession>,
+    session: Option<&UserSession>,
 ) -> ApiResult<PublicPost> {
     if let Ok(content) = serde_json::from_value(post.content.0) {
         Ok(PublicPost {
@@ -37,7 +38,13 @@ pub fn to_public(
                 }
             },
             like_status: LikeStatus::NoReaction,
-            bookmarked: false,
+            // We check the existenc of session here, if not exist, set to false
+            bookmarked: {
+                match session {
+                    Some(session) => uchat_query::post::get_bookmark(conn, session.user_id, post.id)?,
+                    None => false
+                }
+            },
             boosted: false,
             likes: 0,
             dislikes: 0,
@@ -60,6 +67,9 @@ impl AuthorizedApiRequest for NewPost {
     #[tracing::instrument(
         name = "Creating a new post",
         skip_all,
+        fields( 
+            time_posted = ?self.options.time_posted
+        )
     )]
     async fn process_request(
         self,
@@ -109,8 +119,12 @@ impl AuthorizedApiRequest for Bookmark {
     type Response = (StatusCode, Json<BookmarkOk>);
 
     #[tracing::instrument(
-        name = "Create a bookmark",
+        name = "Add or remove a bookmark",
         skip_all,
+        fields(
+            post_id = ?self.post_id,
+            action = ?self.action
+        )
     )]
     async fn process_request(
         self,
@@ -127,8 +141,8 @@ impl AuthorizedApiRequest for Bookmark {
                 uchat_query::post::delete_bookmark(&mut conn, session.user_id, self.post_id)?;
             }
         }
-        
-        tracing::info!(post_id = ?self.post_id, "Toggle bookmark successfully");
+
+        tracing::info!("Toggle bookmark successfully");
         Ok((
             StatusCode::OK,
             Json(BookmarkOk {
@@ -137,3 +151,50 @@ impl AuthorizedApiRequest for Bookmark {
         ))
     }
 }
+
+#[async_trait]
+impl AuthorizedApiRequest for React {
+    type Response = (StatusCode, Json<ReactOk>);
+
+    #[tracing::instrument(
+        name = "Update Like status",
+        skip_all,
+        fields(
+            post_id = ?self.post_id,
+            like_status = ?self.like_status
+        )
+    )]
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        let reaction = Reaction {
+            post_id: self.post_id,
+            user_id: session.user_id,
+            reaction: None,
+            like_status: match self.like_status {
+                LikeStatus::Like => 1,
+                LikeStatus::Dislike => -1,
+                LikeStatus::NoReaction => 0
+            },
+            created_at: Utc::now()
+        };
+
+        tracing::info!("Querying data from reactions");
+        uchat_query::post::react(&mut conn, reaction)?;
+
+        tracing::info!("Like status has been updated");
+        Ok((
+            StatusCode::OK,
+            Json(ReactOk {
+                like_status: self.like_status,
+                likes: 0,
+                dislikes: 0
+            })
+        ))
+
+    }    
+}
+
