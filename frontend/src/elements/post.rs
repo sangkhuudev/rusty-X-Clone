@@ -3,6 +3,8 @@ use uchat_domain::PostId;
 use uchat_endpoint::post::types::PublicPost;
 
 pub mod content;
+pub mod actionbar;
+
 #[derive(Default)]
 pub struct PostManager {
     pub posts: IndexMap<PostId, PublicPost>

@@ -61,3 +61,18 @@ pub struct PublicPost {
     pub dislikes: i64,
     pub boosts: i64,
 }
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum BookmarkAction {
+    Add,
+    Remove,
+}
+
+impl From<BookmarkAction> for bool {
+    fn from(value: BookmarkAction) -> Self {
+        match value {
+            BookmarkAction::Add => true,
+            BookmarkAction::Remove => false
+        }
+    }
+}

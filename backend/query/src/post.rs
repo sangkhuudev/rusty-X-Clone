@@ -4,6 +4,7 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uchat_domain::{PostId, UserId};
 use uuid::Uuid;
+use crate::schema::bookmarks::{self, columns};
 use crate::schema::posts;
 use crate::{schema, DieselError};
 use uchat_endpoint::post::types;
@@ -65,4 +66,57 @@ pub fn get_trending(conn: &mut PgConnection) -> Result<Vec<Post>, DieselError> {
         .order(posts::columns::time_posted.desc())
         .limit(30)
         .get_results(conn)
+}
+
+pub fn bookmark(
+    conn: &mut PgConnection, 
+    user_id: UserId,
+    post_id: PostId
+) -> Result<(), DieselError> {
+    // Change names of user_id and post_id because we dont want to mess with database.
+    let uid = user_id;
+    let pid = post_id;
+    conn.transaction::<(), DieselError, _>(|conn| {
+        diesel::insert_into(schema::bookmarks::table)
+            .values((
+                columns::user_id.eq(uid),
+                columns::post_id.eq(pid)
+            ))
+            .on_conflict((
+                columns::user_id, 
+                columns::post_id
+            ))
+            .do_nothing()
+            .execute(conn)?;
+        Ok(())
+    })
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum DeleteStatus {
+    Deleted,
+    NotFound
+}
+
+pub fn delete_bookmark(
+    conn: &mut PgConnection, 
+    user_id: UserId,
+    post_id: PostId
+) -> Result<DeleteStatus, DieselError> {
+    // Change names of user_id and post_id because we dont want to mess with database.
+    let uid = user_id;
+    let pid = post_id;
+    conn.transaction::<DeleteStatus, DieselError, _>(|conn| {
+        diesel::delete(schema::bookmarks::table)
+            .filter(bookmarks::columns::user_id.eq(uid))
+            .filter(bookmarks::columns::post_id.eq(pid))
+            .execute(conn)
+            .map(|rowcount| {
+                if rowcount > 0 {
+                    DeleteStatus::Deleted
+                } else {
+                    DeleteStatus::NotFound
+                }
+            })
+    })
 }

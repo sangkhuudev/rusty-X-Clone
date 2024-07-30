@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use axum::{async_trait, http::StatusCode, Json};
 use uchat_domain::Username;
-use uchat_endpoint::{post::{endpoint::{NewPost, NewPostOk, TrendingPost, TrendingPostOk}, types::{LikeStatus, PublicPost}}, RequestFailed}; 
+use uchat_endpoint::{post::{endpoint::{Bookmark, BookmarkOk, NewPost, NewPostOk, TrendingPost, TrendingPostOk}, types::{BookmarkAction, LikeStatus, PublicPost}}, RequestFailed}; 
 use uchat_query::{post::Post, AsyncConnection};
 
 use crate::{error::{ApiError, ApiResult}, extractor::{DbConnection, UserSession}, AppState};
@@ -11,9 +11,9 @@ use super::AuthorizedApiRequest;
 pub fn to_public(
     conn: &mut AsyncConnection,
     post: Post,
-    session: Option<&UserSession>,
+    _session: Option<&UserSession>,
 ) -> ApiResult<PublicPost> {
-    if let Ok(mut content) = serde_json::from_value(post.content.0) {
+    if let Ok(content) = serde_json::from_value(post.content.0) {
         Ok(PublicPost {
             id: post.id,
             by_user: {
@@ -101,5 +101,39 @@ impl AuthorizedApiRequest for TrendingPost {
             }
         }
         Ok((StatusCode::OK, Json(TrendingPostOk { posts})))
+    }
+}
+
+#[async_trait]
+impl AuthorizedApiRequest for Bookmark {
+    type Response = (StatusCode, Json<BookmarkOk>);
+
+    #[tracing::instrument(
+        name = "Create a bookmark",
+        skip_all,
+    )]
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        match self.action {
+            BookmarkAction::Add => {
+                uchat_query::post::bookmark(&mut conn, session.user_id, self.post_id)?;
+            }
+
+            BookmarkAction::Remove => {
+                uchat_query::post::delete_bookmark(&mut conn, session.user_id, self.post_id)?;
+            }
+        }
+        
+        tracing::info!(post_id = ?self.post_id, "Toggle bookmark successfully");
+        Ok((
+            StatusCode::OK,
+            Json(BookmarkOk {
+                status: self.action
+            })
+        ))
     }
 }
