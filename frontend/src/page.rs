@@ -1,18 +1,17 @@
 pub mod home;
-pub mod not_found;
-pub mod register;
 pub mod login;
 pub mod new_post;
+pub mod not_found;
+pub mod register;
 pub mod trending;
 
+pub use crate::elements::*;
 pub use home::Home;
+pub use login::Login;
+pub use new_post::*;
 pub use not_found::PageNotFound;
 pub use register::Register;
-pub use login::Login;
 pub use trending::Trending;
-pub use new_post::*;
-pub use crate::elements::*;
-
 
 use dioxus::prelude::*;
 

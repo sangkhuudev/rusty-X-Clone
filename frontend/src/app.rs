@@ -8,5 +8,5 @@ pub fn App() -> Element {
     rsx! {
         Router::<Route> {}
         ToastRoot { }
-    }    
+    }
 }

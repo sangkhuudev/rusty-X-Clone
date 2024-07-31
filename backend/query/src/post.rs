@@ -215,17 +215,14 @@ pub fn aggregate_reactions(
 
     let boosts = {
         use crate::schema::boosts::dsl::*;
-        boosts
-        .filter(post_id.eq(pid))
-        .count()
-        .get_result(conn)?
+        boosts.filter(post_id.eq(pid)).count().get_result(conn)?
     };
 
     Ok(AggregatePostInfo {
         post_id,
         likes,
         dislikes,
-        boosts
+        boosts,
     })
 }
 
@@ -233,7 +230,7 @@ pub fn boost(
     conn: &mut PgConnection,
     user_id: UserId,
     post_id: PostId,
-    when: DateTime<Utc>
+    when: DateTime<Utc>,
 ) -> Result<(), DieselError> {
     // Change names of user_id and post_id because we dont want to mess with database.
     let uid = user_id;

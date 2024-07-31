@@ -1,3 +1,4 @@
+use super::RequestError;
 use crate::ROOT_API_URL;
 use futures::{
     future::{select, Either},
@@ -8,11 +9,10 @@ use once_cell::sync::OnceCell;
 use reqwest::{Client, ClientBuilder, Response};
 use serde::Serialize;
 use std::time::Duration;
-use super::RequestError;
 
 pub static API_CLIENT: OnceCell<ApiClient> = OnceCell::new();
 
-#[derive(Debug,Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct ApiClient {
     pub inner: Client,
 }
@@ -82,17 +82,9 @@ async fn post_json<T>(
 where
     T: Serialize + ?Sized,
 {
-
     let url = make_absolute_url(endpoint);
 
-    let api_request = async {
-        client
-            .inner
-            .post(url)
-            .json(json)
-            .send()
-            .await
-    };
+    let api_request = async { client.inner.post(url).json(json).send().await };
 
     make_request(api_request, timeout).await
 }

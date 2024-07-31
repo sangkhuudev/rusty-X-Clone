@@ -7,7 +7,6 @@ use crate::TOASTER;
 
 #[component]
 pub fn Home() -> Element {
-
     rsx! {
         div {
             h1 { "This is home page" }
@@ -22,4 +21,3 @@ pub fn Home() -> Element {
         }
     }
 }
-

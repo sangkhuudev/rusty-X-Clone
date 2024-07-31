@@ -3,7 +3,10 @@ use chrono::{Duration, Utc};
 use tracing::info;
 use uchat_crypto::{encode_base64, hash_password, password::deserialize_hash, verify_password};
 use uchat_domain::user::DisplayName;
-use uchat_endpoint::user::{endpoint::{CreateUser, CreateUserOk, Login, LoginOk}, types::PublicUserProfile};
+use uchat_endpoint::user::{
+    endpoint::{CreateUser, CreateUserOk, Login, LoginOk},
+    types::PublicUserProfile,
+};
 use uchat_query::{
     session::{self, Session},
     user::{get_hashed_password, User},
@@ -17,12 +20,14 @@ use super::PublicApiRequest;
 pub fn to_public(user: User) -> ApiResult<PublicUserProfile> {
     Ok(PublicUserProfile {
         id: user.id,
-        dislay_name: user.display_name.and_then(|name| DisplayName::try_new(name).ok()),
+        dislay_name: user
+            .display_name
+            .and_then(|name| DisplayName::try_new(name).ok()),
         handle: user.handle,
         profile_image: None,
         created_at: user.created_at,
         am_following: false,
-        })
+    })
 }
 
 #[derive(Debug, Clone)]
@@ -74,7 +79,7 @@ impl PublicApiRequest for CreateUser {
                 username: self.username,
                 session_id: session.id,
                 session_signature: signature.0,
-                session_expires: Utc::now() + duration 
+                session_expires: Utc::now() + duration,
             }),
         ))
     }

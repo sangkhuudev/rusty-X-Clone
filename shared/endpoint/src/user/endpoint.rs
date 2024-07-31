@@ -3,13 +3,11 @@ use serde::{Deserialize, Serialize};
 use uchat_domain::{Password, SessionId, UserId, Username};
 use url::Url;
 
-
 #[derive(Clone, Serialize, Deserialize)]
 pub struct CreateUser {
     pub username: Username,
     pub password: Password,
 }
-
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CreateUserOk {
@@ -20,7 +18,7 @@ pub struct CreateUserOk {
     pub session_expires: DateTime<Utc>,
 }
 
-#[derive(Clone,Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Login {
     pub username: Username,
     pub password: Password,
@@ -36,4 +34,3 @@ pub struct LoginOk {
     pub profile_image: Option<Url>,
     pub user_id: UserId,
 }
-

@@ -102,16 +102,18 @@ pub fn ToastRoot() -> Element {
         }
     });
 
-    let total_toasts =  TOASTER.signal();
+    let total_toasts = TOASTER.signal();
 
     // use_future will run the future
     let _remove_ids = use_resource(move || async move {
         loop {
-            if  total_toasts.read().toasts.len() == 0  {
+            if total_toasts.read().toasts.len() == 0 {
                 break;
             }
-            
-            let expired_ids = TOASTER.read().iter()
+
+            let expired_ids = TOASTER
+                .read()
+                .iter()
                 .filter_map(|(&id, toast)| {
                     if Utc::now() > toast.expires {
                         Some(id)
@@ -122,16 +124,17 @@ pub fn ToastRoot() -> Element {
                 .collect::<Vec<usize>>();
             info!("The loop will be break after removing toasts ");
 
-            expired_ids.iter().for_each(|&id| TOASTER.write().remove(id));
-            
-            if  total_toasts.read().toasts.len() == 0  {
+            expired_ids
+                .iter()
+                .for_each(|&id| TOASTER.write().remove(id));
+
+            if total_toasts.read().toasts.len() == 0 {
                 break;
             }
 
             gloo_timers::future::TimeoutFuture::new(200_u32).await
-        }    
+        }
     });
-    
 
     rsx! {
         div {

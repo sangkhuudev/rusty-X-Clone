@@ -127,15 +127,15 @@ pub fn Register() -> Element {
             onsubmit: form_onsubmit,
 
             // Username input component
-            UsernameInput { 
-                state: page_state.with(|state| state.username), 
-                oninput: username_oninput 
+            UsernameInput {
+                state: page_state.with(|state| state.username),
+                oninput: username_oninput
             }
 
             // Password input component
-            PasswordInput { 
-                state: page_state.with(|state| state.password), 
-                oninput: password_oninput 
+            PasswordInput {
+                state: page_state.with(|state| state.password),
+                oninput: password_oninput
             }
 
             // Error notifications component

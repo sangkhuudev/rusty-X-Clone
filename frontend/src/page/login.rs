@@ -1,13 +1,13 @@
 #![allow(non_snake_case)]
 
-use dioxus::prelude::*;
 use crate::elements::keyed_notifications_box::{KeyedNotifications, KeyedNotificationsBox};
 use crate::page::Route;
 use crate::util::ApiClient;
 use crate::{fetch_json, prelude::*};
+use dioxus::prelude::*;
+use dioxus_logger::tracing::{error, info};
 use uchat_domain::{Password, Username};
 use uchat_endpoint::user::endpoint::{Login, LoginOk};
-use dioxus_logger::tracing::{info, error};
 
 pub struct PageState {
     pub username: Signal<String>,
@@ -88,9 +88,9 @@ pub fn Login() -> Element {
 
         let request_data = Login {
             username: Username::try_new(page_state.with(|state| state.username.read().to_string()))
-            .expect("Username is not valid!"),
+                .expect("Username is not valid!"),
             password: Password::try_new(page_state.with(|state| state.password.read().to_string()))
-            .expect("There is somthing wrong with password"),
+                .expect("There is somthing wrong with password"),
         };
 
         let response = fetch_json!(<LoginOk>, api_client, request_data);
@@ -142,15 +142,15 @@ pub fn Login() -> Element {
             onsubmit: form_onsubmit,
 
             // Username input component
-            UsernameInput { 
-                state: page_state.with(|state| state.username), 
-                oninput: username_oninput 
+            UsernameInput {
+                state: page_state.with(|state| state.username),
+                oninput: username_oninput
             }
 
             // Password input component
-            PasswordInput { 
-                state: page_state.with(|state| state.password), 
-                oninput: password_oninput 
+            PasswordInput {
+                state: page_state.with(|state| state.password),
+                oninput: password_oninput
             }
 
             // Error notifications component
@@ -159,7 +159,7 @@ pub fn Login() -> Element {
                 notification: page_state.with(|state| state.form_error.clone())
             }
 
-            // Submit button 
+            // Submit button
             button {
                 class: "btn {btn_submit_style}",
                 r#type: "submit",

@@ -132,7 +132,9 @@ pub fn NewChat() -> Element {
         match response {
             Ok(_res) => {
                 info!("Post new chat successfully!");
-                TOASTER.write().success("Posted successfully", Duration::seconds(3));
+                TOASTER
+                    .write()
+                    .success("Posted successfully", Duration::seconds(3));
                 router.replace(Route::Home {});
             }
             Err(e) => {

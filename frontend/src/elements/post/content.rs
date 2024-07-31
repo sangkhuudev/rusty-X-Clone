@@ -1,4 +1,3 @@
-
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
@@ -24,9 +23,10 @@ pub fn Chat(post_id: PostId, content: EndpointChat) -> Element {
 
 #[component]
 pub fn Content(post: PublicPost) -> Element {
-    rsx!(
-        match post.content {
-            EndpointContent::Chat(content) => rsx!( Chat { post_id: post.id, content: content})
-        }
-    )
+    rsx!(match post.content {
+        EndpointContent::Chat(content) => rsx!(Chat {
+            post_id: post.id,
+            content: content
+        }),
+    })
 }

@@ -39,9 +39,6 @@ pub struct UserSession {
     pub session_id: SessionId,
 }
 
-
-
-
 #[async_trait]
 impl<S> FromRequestParts<S> for UserSession
 where
@@ -51,7 +48,7 @@ where
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
         tracing::debug!("Starting extraction of UserSession");
-        
+
         // Debug log the extracted cookies
         let unauthorized = || {
             (
@@ -69,35 +66,39 @@ where
         })?;
 
         // Extract AppState
-        let Extension(state) = parts.extract::<Extension<AppState>>().await.map_err(|err| {
-            tracing::debug!("Failed to extract AppState: {:?}", err);
-            unauthorized()
-        })?;
+        let Extension(state) = parts
+            .extract::<Extension<AppState>>()
+            .await
+            .map_err(|err| {
+                tracing::debug!("Failed to extract AppState: {:?}", err);
+                unauthorized()
+            })?;
 
         // Extract Cookies
-        let cookies = parts.headers.get(COOKIE)
+        let cookies = parts
+            .headers
+            .get(COOKIE)
             .and_then(|header| header.to_str().ok());
 
         match cookies {
             Some(cookies) => {
-
                 let session_id = uchat_cookie::get_from_str(cookies, uchat_cookie::SESSION_ID)
                     .ok_or_else(|| {
                         tracing::debug!("Failed to extract SESSION_ID from cookies");
                         unauthorized()
                     })?;
 
-                let session_signature = uchat_cookie::get_from_str(cookies, uchat_cookie::SESSION_SIGNATURE)
-                    .ok_or_else(|| {
-                        tracing::debug!("Failed to extract SESSION_SIGNATURE from cookies");
-                        unauthorized()
-                    })?;
+                let session_signature =
+                    uchat_cookie::get_from_str(cookies, uchat_cookie::SESSION_SIGNATURE)
+                        .ok_or_else(|| {
+                            tracing::debug!("Failed to extract SESSION_SIGNATURE from cookies");
+                            unauthorized()
+                        })?;
 
-                let session_id = SessionId::from_str(session_id)
-                    .map_err(|_| {
-                        tracing::debug!("Failed to parse SESSION_ID");
-                        unauthorized()
-                    })?;
+                let session_id = SessionId::from_str(session_id).map_err(|_| {
+                    tracing::debug!("Failed to parse SESSION_ID");
+                    unauthorized()
+                })?;
 
                 let session_signature = uchat_crypto::decode_base64(session_signature)
                     .ok()
@@ -108,7 +109,9 @@ where
                     })?;
 
                 tracing::debug!("Verifying session signature...");
-                state.signing_keys.verify(session_id.as_uuid().as_bytes(), session_signature)
+                state
+                    .signing_keys
+                    .verify(session_id.as_uuid().as_bytes(), session_signature)
                     .map_err(|_| {
                         tracing::debug!("Session signature verification failed");
                         unauthorized()
@@ -138,7 +141,7 @@ where
                     user_id: session.user_id,
                     session_id: session.id,
                 })
-            },
+            }
             None => {
                 tracing::debug!("Failed to extract cookies from headers");
                 Err(unauthorized())

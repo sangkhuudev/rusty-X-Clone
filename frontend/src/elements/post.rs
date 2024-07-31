@@ -1,25 +1,25 @@
 #![allow(non_snake_case)]
 
-use dioxus::prelude::*;
+use crate::page::post::actionbar::Actionbar;
 use crate::{page::post::content::Content, POSTMANAGER};
+use dioxus::prelude::*;
+use indexmap::IndexMap;
 use uchat_domain::PostId;
 use uchat_endpoint::post::types::PublicPost;
-use crate::page::post::actionbar::Actionbar;
-use indexmap::IndexMap;
 
-
-pub mod content;
 pub mod actionbar;
+pub mod content;
+pub mod quick_response;
 
 #[derive(Default)]
 pub struct PostManager {
-    pub posts: IndexMap<PostId, PublicPost>
+    pub posts: IndexMap<PostId, PublicPost>,
 }
 
 impl PostManager {
-    pub fn update<F>(&mut self, post_id: PostId, mut update_fn: F) -> bool 
+    pub fn update<F>(&mut self, post_id: PostId, mut update_fn: F) -> bool
     where
-        F: FnMut(&mut PublicPost)
+        F: FnMut(&mut PublicPost),
     {
         if let Some(post) = self.posts.get_mut(&post_id) {
             update_fn(post);
@@ -31,7 +31,7 @@ impl PostManager {
 
     pub fn populate<T>(&mut self, posts: T)
     where
-        T: Iterator<Item = PublicPost>
+        T: Iterator<Item = PublicPost>,
     {
         self.posts.clear();
         for post in posts {
@@ -50,9 +50,7 @@ impl PostManager {
     pub fn remove(&mut self, post_id: &PostId) {
         self.posts.shift_remove(post_id);
     }
-}   
-
-
+}
 
 #[component]
 pub fn Header(post: PublicPost) -> Element {
@@ -61,10 +59,10 @@ pub fn Header(post: PublicPost) -> Element {
         let time = post.time_posted.format("%H:%m:%s");
         (date, time)
     };
-    
+
     let display_name = match &post.by_user.dislay_name {
         Some(name) => name.as_ref(),
-        None => ""
+        None => "",
     };
 
     let handle = &post.by_user.handle;

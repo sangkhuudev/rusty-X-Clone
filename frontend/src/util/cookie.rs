@@ -65,4 +65,3 @@ fn format_cookie<S: AsRef<str>>(payload: S, expires: DateTime<Utc>) -> String {
     let cookie = format!("{payload}; {expires}; {options}");
     cookie
 }
-

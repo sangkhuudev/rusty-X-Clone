@@ -13,16 +13,7 @@ pub enum IdError {
 macro_rules! new_id {
     ($name:ident) => {
         #[derive(
-            Clone,
-            Copy,
-            Debug,
-            Eq,
-            Hash,
-            Deserialize,
-            Serialize,
-            PartialEq,
-            Ord,
-            PartialOrd,
+            Clone, Copy, Debug, Eq, Hash, Deserialize, Serialize, PartialEq, Ord, PartialOrd,
         )]
         #[cfg_attr(feature = "query", derive(DieselNewType))]
         pub struct $name(Uuid);
@@ -74,4 +65,3 @@ macro_rules! new_id {
 new_id!(UserId);
 new_id!(SessionId);
 new_id!(PostId);
-

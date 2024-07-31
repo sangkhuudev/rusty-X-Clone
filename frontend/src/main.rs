@@ -5,16 +5,15 @@
 
 pub mod app;
 pub mod elements;
+pub mod icon;
 pub mod page;
 pub mod util;
-pub mod icon;
 
 use app::App;
 use dioxus::prelude::*;
+use dioxus_logger::tracing::{info, Level};
 use page::{PostManager, Toaster};
 use util::ApiClient;
-use dioxus_logger::tracing::{Level, info};
-
 
 pub const ROOT_API_URL: &str = "http://127.0.0.1:8000/";
 
@@ -32,5 +31,5 @@ fn main() {
 
 mod prelude {
     // pub use crate::page;
-    pub use crate::util::{async_handler, sync_handler, maybe_class};
+    pub use crate::util::{async_handler, maybe_class, sync_handler};
 }

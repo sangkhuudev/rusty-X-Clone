@@ -1,5 +1,5 @@
 use argon2::{
-    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
 use tracing::instrument;
@@ -19,7 +19,7 @@ fn new_salt() -> SaltString {
 #[instrument(level = "trace", err, skip_all)]
 pub fn hash_password_with_salt<T: AsRef<str>>(
     password: T,
-    salt: Salt<'_>
+    salt: Salt<'_>,
 ) -> Result<PasswordHashString, Error> {
     let argon2 = Argon2::default();
     let password = password.as_ref().as_bytes();
@@ -29,23 +29,21 @@ pub fn hash_password_with_salt<T: AsRef<str>>(
 }
 
 #[instrument(level = "trace", err, skip_all)]
-pub fn hash_password<T: AsRef<str>>(
-    password: T
-) -> Result<PasswordHashString, Error> {
+pub fn hash_password<T: AsRef<str>>(password: T) -> Result<PasswordHashString, Error> {
     let salt = new_salt();
     hash_password_with_salt(password, salt.as_salt())
 }
 
-
 #[instrument(level = "debug", err, skip_all)]
 pub fn verify_password<T: AsRef<str>>(
     password: T,
-    hashed_password: &PasswordHash 
+    hashed_password: &PasswordHash,
 ) -> Result<(), Error> {
     let argon2 = Argon2::default();
     let password = password.as_ref().as_bytes();
 
-    argon2.verify_password(password, hashed_password)
+    argon2
+        .verify_password(password, hashed_password)
         .map_err(|_| Error::InvalidPassword)
 }
 
@@ -58,7 +56,7 @@ pub fn deserialize_hash(hash: &str) -> Result<PasswordHash<'_>, Error> {
 mod tests {
     use super::*;
     use password_hash::Encoding;
-    
+
     #[test]
     fn hash_password_with_salt_works() {
         let password = "password";
@@ -82,7 +80,7 @@ mod tests {
         let password = "password";
         let hashed_password = hash_password(password).unwrap();
         let hashed_password = PasswordHash::parse(hashed_password.as_str(), Encoding::B64).unwrap();
-        assert!(verify_password("wrong", &hashed_password).is_err());    
+        assert!(verify_password("wrong", &hashed_password).is_err());
     }
 
     #[test]
@@ -91,5 +89,4 @@ mod tests {
         let hashed_password = hash_password(password).unwrap();
         assert!(deserialize_hash(hashed_password.as_str()).is_ok());
     }
-
 }

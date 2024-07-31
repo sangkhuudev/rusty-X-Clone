@@ -7,10 +7,7 @@ use uchat_domain::{SessionId, UserId};
 use crate::schema::web;
 use crate::DieselError;
 
-#[derive(
-    Debug, Clone, PartialEq, Eq, Hash, 
-    Serialize, Deserialize, DieselNewType
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, DieselNewType)]
 pub struct FingerPrint(Value);
 
 impl From<Value> for FingerPrint {
@@ -51,12 +48,9 @@ pub fn new(
         .get_result::<Session>(conn)
 }
 
-pub fn get(
-    conn: &mut PgConnection,
-    session_id: SessionId
-) -> Result<Option<Session>, DieselError> {
+pub fn get(conn: &mut PgConnection, session_id: SessionId) -> Result<Option<Session>, DieselError> {
     tracing::debug!("Retrieving session with ID: {:?}", session_id);
-    
+
     let session = web::table
         .filter(web::id.eq(session_id))
         .get_result::<Session>(conn)
@@ -79,11 +73,10 @@ pub fn get(
 pub fn find(
     conn: &mut PgConnection,
     user_id: UserId,
-    fingerprint: FingerPrint
+    fingerprint: FingerPrint,
 ) -> Result<Session, DieselError> {
     web::table
         .filter(web::user_id.eq(user_id))
         .filter(web::fingerprint.eq(fingerprint))
         .get_result(conn)
 }
-

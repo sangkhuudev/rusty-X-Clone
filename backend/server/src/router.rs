@@ -1,8 +1,5 @@
 use axum::{
-    http::{
-        header::CONTENT_TYPE,
-        HeaderValue, Method,
-    },
+    http::{header::CONTENT_TYPE, HeaderValue, Method},
     routing::{get, post},
     Router,
 };
@@ -22,7 +19,7 @@ use uchat_endpoint::{
 
 use crate::{
     handler::{with_handler, with_public_handler},
-    AppState
+    AppState,
 };
 
 pub async fn new_router(state: AppState) -> Router {
@@ -64,10 +61,9 @@ pub async fn new_router(state: AppState) -> Router {
                                 .parse::<HeaderValue>()
                                 .unwrap(),
                         )
-                        .allow_headers(vec![CONTENT_TYPE])
+                        .allow_headers(vec![CONTENT_TYPE]),
                 )
                 .layer(axum::Extension(state.clone())),
         )
         .with_state(state)
 }
-

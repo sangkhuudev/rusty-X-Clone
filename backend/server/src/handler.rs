@@ -1,9 +1,13 @@
-use crate::{error::ApiResult, extractor::{DbConnection, UserSession}, AppState};
+use crate::{
+    error::ApiResult,
+    extractor::{DbConnection, UserSession},
+    AppState,
+};
 use axum::{async_trait, extract::State, response::IntoResponse, Json};
-use serde::Deserialize;
 use core::fmt::Debug;
-pub mod user;
+use serde::Deserialize;
 pub mod post;
+pub mod user;
 #[async_trait]
 pub trait PublicApiRequest {
     type Response: IntoResponse;

@@ -54,7 +54,7 @@ macro_rules! async_handler {
                 #[allow(unused_mut)]
                 let mut $cap = $cap;
             )*
-            spawn($body);        
+            spawn($body);
         }
     };
     (move |$($args:tt),*| $body:expr) => {

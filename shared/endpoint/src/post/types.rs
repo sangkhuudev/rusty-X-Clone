@@ -10,7 +10,6 @@ pub struct Chat {
     pub message: Message,
 }
 
-
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Content {
     Chat(Chat),
@@ -26,7 +25,7 @@ impl From<Chat> for Content {
 pub struct NewPostOptions {
     pub reply_to: Option<PostId>,
     pub direct_message_to: Option<UserId>,
-    pub time_posted: DateTime<Utc>
+    pub time_posted: DateTime<Utc>,
 }
 
 impl Default for NewPostOptions {
@@ -34,7 +33,7 @@ impl Default for NewPostOptions {
         Self {
             reply_to: None,
             direct_message_to: None,
-            time_posted: Utc::now()
+            time_posted: Utc::now(),
         }
     }
 }
@@ -72,7 +71,7 @@ impl From<BookmarkAction> for bool {
     fn from(value: BookmarkAction) -> Self {
         match value {
             BookmarkAction::Add => true,
-            BookmarkAction::Remove => false
+            BookmarkAction::Remove => false,
         }
     }
 }
@@ -87,7 +86,7 @@ impl From<BoostAction> for bool {
     fn from(value: BoostAction) -> Self {
         match value {
             BoostAction::Add => true,
-            BoostAction::Remove => false
+            BoostAction::Remove => false,
         }
     }
 }

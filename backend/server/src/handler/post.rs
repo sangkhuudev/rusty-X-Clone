@@ -2,10 +2,26 @@ use anyhow::anyhow;
 use axum::{async_trait, http::StatusCode, Json};
 use chrono::Utc;
 use uchat_domain::Username;
-use uchat_endpoint::{post::{endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk, TrendingPost, TrendingPostOk}, types::{BookmarkAction, BoostAction, LikeStatus, PublicPost}}, RequestFailed}; 
-use uchat_query::{post::{Post, Reaction}, AsyncConnection};
+use uchat_endpoint::{
+    post::{
+        endpoint::{
+            Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk, TrendingPost,
+            TrendingPostOk,
+        },
+        types::{BookmarkAction, BoostAction, LikeStatus, PublicPost},
+    },
+    RequestFailed,
+};
+use uchat_query::{
+    post::{Post, Reaction},
+    AsyncConnection,
+};
 
-use crate::{error::{ApiError, ApiResult}, extractor::{DbConnection, UserSession}, AppState};
+use crate::{
+    error::{ApiError, ApiResult},
+    extractor::{DbConnection, UserSession},
+    AppState,
+};
 
 use super::AuthorizedApiRequest;
 
@@ -33,10 +49,10 @@ pub fn to_public(
                         Some((
                             Username::try_new(original_user.handle).unwrap(),
                             original_user.id,
-                            other_post_id
+                            other_post_id,
                         ))
-                    },
-                    None => None
+                    }
+                    None => None,
                 }
             },
             // Display current like status
@@ -46,23 +62,25 @@ pub fn to_public(
                         match uchat_query::post::get_reaction(conn, post.id, session.user_id)? {
                             Some(reaction) if reaction.like_status == 1 => LikeStatus::Like,
                             Some(reaction) if reaction.like_status == -1 => LikeStatus::Dislike,
-                            _ => LikeStatus::NoReaction
+                            _ => LikeStatus::NoReaction,
                         }
                     }
-                    None => LikeStatus::NoReaction
+                    None => LikeStatus::NoReaction,
                 }
             },
             // We check the existenc of session here, if not exist, set to false
             bookmarked: {
                 match session {
-                    Some(session) => uchat_query::post::get_bookmark(conn, session.user_id, post.id)?,
-                    None => false
+                    Some(session) => {
+                        uchat_query::post::get_bookmark(conn, session.user_id, post.id)?
+                    }
+                    None => false,
                 }
             },
             boosted: {
                 match session {
                     Some(session) => uchat_query::post::get_boost(conn, session.user_id, post.id)?,
-                    None => false
+                    None => false,
                 }
             },
             likes: aggregate_reactions.likes,
@@ -74,7 +92,7 @@ pub fn to_public(
             code: Some(StatusCode::INTERNAL_SERVER_ERROR),
             error: anyhow!(RequestFailed {
                 msg: "Invalid post data".to_string()
-            })
+            }),
         })
     }
 }
@@ -83,10 +101,7 @@ pub fn to_public(
 impl AuthorizedApiRequest for NewPost {
     type Response = (StatusCode, Json<NewPostOk>);
 
-    #[tracing::instrument(
-        name = "Creating a new post",
-        skip_all,
-    )]
+    #[tracing::instrument(name = "Creating a new post", skip_all)]
     async fn process_request(
         self,
         DbConnection(mut conn): DbConnection,
@@ -126,7 +141,7 @@ impl AuthorizedApiRequest for TrendingPost {
                 }
             }
         }
-        Ok((StatusCode::OK, Json(TrendingPostOk { posts})))
+        Ok((StatusCode::OK, Json(TrendingPostOk { posts })))
     }
 }
 
@@ -162,8 +177,8 @@ impl AuthorizedApiRequest for Bookmark {
         Ok((
             StatusCode::OK,
             Json(BookmarkOk {
-                status: self.action
-            })
+                status: self.action,
+            }),
         ))
     }
 }
@@ -200,12 +215,11 @@ impl AuthorizedApiRequest for Boost {
         Ok((
             StatusCode::OK,
             Json(BoostOk {
-                status: self.action
-            })
+                status: self.action,
+            }),
         ))
     }
 }
-
 
 #[async_trait]
 impl AuthorizedApiRequest for React {
@@ -232,9 +246,9 @@ impl AuthorizedApiRequest for React {
             like_status: match self.like_status {
                 LikeStatus::Like => 1,
                 LikeStatus::Dislike => -1,
-                LikeStatus::NoReaction => 0
+                LikeStatus::NoReaction => 0,
             },
-            created_at: Utc::now()
+            created_at: Utc::now(),
         };
 
         tracing::info!("Querying data from reactions");
@@ -242,16 +256,14 @@ impl AuthorizedApiRequest for React {
 
         tracing::info!("Like status has been updated");
         let aggregate_reactions = uchat_query::post::aggregate_reactions(&mut conn, self.post_id)?;
-        
+
         Ok((
             StatusCode::OK,
             Json(ReactOk {
                 like_status: self.like_status,
                 likes: aggregate_reactions.likes,
-                dislikes: aggregate_reactions.dislikes
-            })
+                dislikes: aggregate_reactions.dislikes,
+            }),
         ))
-
-    }    
+    }
 }
-

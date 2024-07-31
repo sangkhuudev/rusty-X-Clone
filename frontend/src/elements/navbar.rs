@@ -1,8 +1,8 @@
 #![allow(non_snake_case)]
 
+use crate::icon::*;
 use crate::{page::Route, prelude::*};
 use dioxus::prelude::*;
-use crate::icon::*;
 
 #[derive(Props, PartialEq, Clone)]
 pub struct NavButtonProps {
@@ -12,7 +12,6 @@ pub struct NavButtonProps {
     highlight: Option<bool>,
     children: Element,
 }
-
 
 pub const BUTTON_CLASS: &str = "grid grid-cols-[20px_1fr] gap-4 pl-4
     justify-center items-center w-full h-12 border-y navbar-border-color";
@@ -33,7 +32,7 @@ pub fn NewPostPopup(hide: Signal<bool>) -> Element {
                     src: "{ICON_POLL}"
                 }
                 "Poll"
-            } 
+            }
             div {
                 class: BUTTON_CLASS,
                 onclick: move |_| {},
@@ -47,7 +46,7 @@ pub fn NewPostPopup(hide: Signal<bool>) -> Element {
                 class: BUTTON_CLASS,
                 onclick: move |_| {
                     // Redirect to /post/new_chat
-                    router().push(Route::NewChat {});    
+                    router().push(Route::NewChat {});
                     hide.set(true);
                 },
                 img {
@@ -59,7 +58,6 @@ pub fn NewPostPopup(hide: Signal<bool>) -> Element {
         }
     )
 }
-
 
 #[component]
 pub fn NavButton(props: NavButtonProps) -> Element {
@@ -101,7 +99,7 @@ pub fn Navbar() -> Element {
                 NavButton {
                     img: "{ICON_HOME}",
                     label: "Home",
-                    onclick: move |_| { 
+                    onclick: move |_| {
                         // router().push(Route::Home);
                     }
                 }
@@ -109,7 +107,7 @@ pub fn Navbar() -> Element {
                 NavButton {
                     img: "{ICON_TRENDING}",
                     label: "Trending",
-                    onclick: move |_| { 
+                    onclick: move |_| {
                         // router().push(Route::Login);
                     }
                 }
@@ -128,4 +126,3 @@ pub fn Navbar() -> Element {
         Outlet::<Route> {}
     )
 }
-
