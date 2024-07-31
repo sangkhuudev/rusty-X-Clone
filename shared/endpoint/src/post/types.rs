@@ -38,7 +38,7 @@ impl Default for NewPostOptions {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum LikeStatus {
     Like,
     Dislike,

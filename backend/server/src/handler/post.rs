@@ -15,6 +15,8 @@ pub fn to_public(
     session: Option<&UserSession>,
 ) -> ApiResult<PublicPost> {
     if let Ok(content) = serde_json::from_value(post.content.0) {
+        let aggregate_reactions = uchat_query::post::aggregate_reactions(conn, post.id)?;
+
         Ok(PublicPost {
             id: post.id,
             by_user: {
@@ -46,9 +48,9 @@ pub fn to_public(
                 }
             },
             boosted: false,
-            likes: 0,
-            dislikes: 0,
-            boosts: 0,
+            likes: aggregate_reactions.likes,
+            dislikes: aggregate_reactions.dislikes,
+            boosts: aggregate_reactions.boosts,
         })
     } else {
         Err(ApiError {
@@ -67,9 +69,6 @@ impl AuthorizedApiRequest for NewPost {
     #[tracing::instrument(
         name = "Creating a new post",
         skip_all,
-        fields( 
-            time_posted = ?self.options.time_posted
-        )
     )]
     async fn process_request(
         self,
@@ -186,12 +185,14 @@ impl AuthorizedApiRequest for React {
         uchat_query::post::react(&mut conn, reaction)?;
 
         tracing::info!("Like status has been updated");
+        let aggregate_reactions = uchat_query::post::aggregate_reactions(&mut conn, self.post_id)?;
+        
         Ok((
             StatusCode::OK,
             Json(ReactOk {
                 like_status: self.like_status,
-                likes: 0,
-                dislikes: 0
+                likes: aggregate_reactions.likes,
+                dislikes: aggregate_reactions.dislikes
             })
         ))
 

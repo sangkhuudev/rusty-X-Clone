@@ -1,18 +1,16 @@
+use crate::schema::posts;
+use crate::schema::reactions;
+use crate::{schema, DieselError};
 use chrono::DateTime;
 use chrono::Utc;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uchat_domain::{PostId, UserId};
-use uuid::Uuid;
-use crate::schema::posts;
-use crate::schema::reactions;
-use crate::{schema, DieselError};
 use uchat_endpoint::post::types;
-
+use uuid::Uuid;
 
 #[derive(Clone, Debug, DieselNewType, Deserialize, Serialize)]
 pub struct Content(pub serde_json::Value);
-
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
 #[diesel(table_name = schema::posts)]
@@ -70,9 +68,9 @@ pub fn get_trending(conn: &mut PgConnection) -> Result<Vec<Post>, DieselError> {
 }
 
 pub fn bookmark(
-    conn: &mut PgConnection, 
+    conn: &mut PgConnection,
     user_id: UserId,
-    post_id: PostId
+    post_id: PostId,
 ) -> Result<(), DieselError> {
     // Change names of user_id and post_id because we dont want to mess with database.
     let uid = user_id;
@@ -80,14 +78,8 @@ pub fn bookmark(
     conn.transaction::<(), DieselError, _>(|conn| {
         use crate::schema::bookmarks::dsl::*;
         diesel::insert_into(bookmarks)
-            .values((
-                user_id.eq(uid),
-                post_id.eq(pid)
-            ))
-            .on_conflict((
-                user_id, 
-                post_id
-            ))
+            .values((user_id.eq(uid), post_id.eq(pid)))
+            .on_conflict((user_id, post_id))
             .do_nothing()
             .execute(conn)?;
         Ok(())
@@ -97,13 +89,13 @@ pub fn bookmark(
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum DeleteStatus {
     Deleted,
-    NotFound
+    NotFound,
 }
 
 pub fn delete_bookmark(
-    conn: &mut PgConnection, 
+    conn: &mut PgConnection,
     user_id: UserId,
-    post_id: PostId
+    post_id: PostId,
 ) -> Result<DeleteStatus, DieselError> {
     // Change names of user_id and post_id because we dont want to mess with database.
     let uid = user_id;
@@ -158,7 +150,7 @@ pub struct Reaction {
     pub post_id: PostId,
     pub created_at: DateTime<Utc>,
     pub like_status: i16,
-    pub reaction: Option<ReactionData>
+    pub reaction: Option<ReactionData>,
 }
 
 pub fn react(conn: &mut PgConnection, reaction: Reaction) -> Result<(), DieselError> {
@@ -168,7 +160,7 @@ pub fn react(conn: &mut PgConnection, reaction: Reaction) -> Result<(), DieselEr
         .do_update()
         .set((
             reactions::like_status.eq(&reaction.like_status),
-            reactions::reaction.eq(&reaction.reaction)
+            reactions::reaction.eq(&reaction.reaction),
         ))
         .execute(conn)
         .map(|_| ())
@@ -177,8 +169,8 @@ pub fn react(conn: &mut PgConnection, reaction: Reaction) -> Result<(), DieselEr
 pub fn get_reaction(
     conn: &mut PgConnection,
     post_id: PostId,
-    user_id: UserId
-) -> Result<Option<Reaction>, DieselError>  {
+    user_id: UserId,
+) -> Result<Option<Reaction>, DieselError> {
     let uid = user_id;
     let pid = post_id;
     {
@@ -190,4 +182,49 @@ pub fn get_reaction(
             .get_result(conn)
             .optional()
     }
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct AggregatePostInfo {
+    pub post_id: PostId,
+    pub likes: i64,
+    pub dislikes: i64,
+    pub boosts: i64,
+}
+
+pub fn aggregate_reactions(
+    conn: &mut PgConnection,
+    post_id: PostId,
+) -> Result<AggregatePostInfo, DieselError> {
+    let pid = post_id;
+    let (likes, dislikes) = {
+        use crate::schema::reactions::dsl::*;
+        let likes = reactions
+            .filter(post_id.eq(pid))
+            .filter(like_status.eq(1))
+            .count()
+            .get_result(conn)?;
+
+        let dislikes = reactions
+            .filter(post_id.eq(pid))
+            .filter(like_status.eq(-1))
+            .count()
+            .get_result(conn)?;
+        (likes, dislikes)
+    };
+
+    let boosts = {
+        use crate::schema::boosts::dsl::*;
+        boosts
+        .filter(post_id.eq(pid))
+        .count()
+        .get_result(conn)?
+    };
+
+    Ok(AggregatePostInfo {
+        post_id,
+        likes,
+        dislikes,
+        boosts
+    })
 }
