@@ -59,7 +59,12 @@ pub fn to_public(
                     None => false
                 }
             },
-            boosted: false,
+            boosted: {
+                match session {
+                    Some(session) => uchat_query::post::get_boost(conn, session.user_id, post.id)?,
+                    None => false
+                }
+            },
             likes: aggregate_reactions.likes,
             dislikes: aggregate_reactions.dislikes,
             boosts: aggregate_reactions.boosts,

@@ -12,3 +12,5 @@ pub const ICON_LIKE_SELECTED: &str = manganis::mg!(file("assets/icons/icon-like-
 pub const ICON_LIKE: &str = manganis::mg!(file("assets/icons/icon-like.svg"));
 pub const ICON_DISLIKE_SELECTED: &str = manganis::mg!(file("assets/icons/icon-dislike-selected.svg"));
 pub const ICON_DISLIKE: &str = manganis::mg!(file("assets/icons/icon-dislike.svg"));
+pub const ICON_BOOST: &str = manganis::mg!(file("assets/icons/icon-boost.svg"));
+pub const ICON_BOOSTED: &str = manganis::mg!(file("assets/icons/icon-boosted.svg"));
