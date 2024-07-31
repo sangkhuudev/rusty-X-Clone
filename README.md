@@ -1,7 +1,11 @@
-# uChat Project Info
+# uChat Project
+The project was crafted entirely in Rust with great care, serving as a way to challenge myself and deepen my understanding of the language. Initially, it appeared straightforward, but it quickly proved to be more complex than expected.
 
-## Design
+Upgrading Dioxus to the latest version presented significant challenges. The new version introduced changes that led to bugs and errors, requiring substantial effort to debug and fix. Ensuring seamless interaction between the frontend, built with Dioxus, and the backend also proved difficult. Managing data flow and state synchronization between the two was particularly challenging, as it involved addressing issues like inconsistent data updates and handling real-time communication effectively.
 
+Despite these hurdles, the experience was invaluable. It honed my skills in Rust and provided insights into the complexities of web development, particularly in managing a full-stack application with a focus on performance and reliability. The project, while not an exact clone of Twitter, showcases the robust capabilities of Rust in building complex web applications.
+
+## Design Directory Overview
 The `design/` directory contains a some design-related files:
 
 | File                              | Purpose                                                                          |
@@ -142,7 +146,7 @@ cargo run -p project-init
 To run a dev server for the frontend and open a new browser window:
 
 ```bash
-trunk serve --open
+dx serve --open
 ```
 
 To run the backend server:
@@ -156,7 +160,7 @@ cargo run -p uchat_server
 To build the project for distribution:
 
 ```bash
-trunk --config Trunk-release.toml build
+dx --config Trunk-release.toml build
 cargo build --release --workspace --exclude frontend
 ```
 
@@ -192,56 +196,3 @@ After creating a new migration, delete the testing database using:
 psql -d postgres -c 'DROP DATABASE uchat_test;'
 ```
 
-## `git tag`
-
-Over time, the `Cargo.lock` and `Cargo.toml` files will diverge from what is
-shown in the videos. This will cause lots of extraneous data to be displayed
-when trying to view the `git diff` output between your code and what is shown
-in the videos. To get useful `diff` output use this command:
-
-```sh
-git diff VIDEO_GIT_TAG ':(exclude)Cargo.lock' ':(exclude)*/Cargo.toml'`
-```
-
-and substitute VIDEO_GIT_TAG with the one shown in the video (use double quotes
-" " if you are on Windows). This will ignore these files in the diff output,
-allowing you to see the actual code changes between videos.
-
-## Updates / Compiler errors
-
-Throughout the videos for this project we use the `cargo add` command to add
-dependencies. This pulls in the most recent version of the dependency which
-will likely differ from the version that was pulled while recording the videos.
-APIs change over time, so some adjustments are necessary while creating this project.
-
-Here is a list of potential issues you may encounter, and how to update your
-code to fix them.
-
-### `nutype`
-
-```text
-error: Unknown validation rule `present`
- --> shared/domain/src/post.rs:5:19
-  |
-5 | #[nutype(validate(present, max_len = 50))]
-  |                   ^^^^^^^
-```
-
-```text
-error[E0599]: no variant or associated item named `Missing` found for enum `UsernameError` in the current scope
-  --> shared/domain/src/user.rs:14:28
-   |
-7  | #[nutype(validate(not_empty, min_len = 3, max_len = 30))]
-   | --------------------------------------------------------- variant or associated item `Missing` not found for this enum
-...
-14 |             UsernameError::Missing => "User name cannot be empty.",
-   |                            ^^^^^^^ variant or associated item not found in `UsernameError`
-```
-
-The `nutype` crate now uses the `not_empty` rule instead of `present`. To fix
-this, two changes need to be made:
-
-1. Replace all `#[nutype(validate(present, ...))]` with
-   `#[nutype(validate(not_empty, ...))]`
-2. In all `impl` blocks where we create `fn formatted_error`, change
-   `StructError::Missing` to `StructError::Empty`.
