@@ -228,3 +228,72 @@ pub fn aggregate_reactions(
         boosts
     })
 }
+
+pub fn boost(
+    conn: &mut PgConnection,
+    user_id: UserId,
+    post_id: PostId,
+    when: DateTime<Utc>
+) -> Result<(), DieselError> {
+    // Change names of user_id and post_id because we dont want to mess with database.
+    let uid = user_id;
+    let pid = post_id;
+    conn.transaction::<(), DieselError, _>(|conn| {
+        use crate::schema::boosts::dsl::*;
+        diesel::insert_into(boosts)
+            .values((user_id.eq(uid), post_id.eq(pid), boosted_at.eq(when)))
+            .on_conflict((user_id, post_id))
+            .do_update()
+            .set(boosted_at.eq(when))
+            .execute(conn)?;
+        Ok(())
+    })
+}
+
+pub fn delete_boost(
+    conn: &mut PgConnection,
+    user_id: UserId,
+    post_id: PostId,
+) -> Result<DeleteStatus, DieselError> {
+    // Change names of user_id and post_id because we dont want to mess with database.
+    let uid = user_id;
+    let pid = post_id;
+    conn.transaction::<DeleteStatus, DieselError, _>(|conn| {
+        use crate::schema::boosts::dsl::*;
+        diesel::delete(schema::boosts::table)
+            .filter(user_id.eq(uid))
+            .filter(post_id.eq(pid))
+            .execute(conn)
+            .map(|rowcount| {
+                if rowcount > 0 {
+                    DeleteStatus::Deleted
+                } else {
+                    DeleteStatus::NotFound
+                }
+            })
+    })
+}
+
+pub fn get_boost(
+    conn: &mut PgConnection,
+    user_id: UserId,
+    post_id: PostId,
+) -> Result<bool, DieselError> {
+    let uid = user_id;
+    let pid = post_id;
+    {
+        use crate::schema::boosts::dsl::*;
+        use diesel::dsl::count;
+
+        boosts
+            .filter(post_id.eq(pid))
+            .filter(user_id.eq(uid))
+            .select(count(post_id))
+            .get_result(conn)
+            .optional()
+            .map(|n: Option<i64>| match n {
+                Some(n) => n == 1,
+                None => false,
+            })
+    }
+}

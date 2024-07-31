@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use axum::{async_trait, http::StatusCode, Json};
 use chrono::Utc;
 use uchat_domain::Username;
-use uchat_endpoint::{post::{endpoint::{Bookmark, BookmarkOk, NewPost, NewPostOk, React, ReactOk, TrendingPost, TrendingPostOk}, types::{BookmarkAction, LikeStatus, PublicPost}}, RequestFailed}; 
+use uchat_endpoint::{post::{endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk, TrendingPost, TrendingPostOk}, types::{BookmarkAction, BoostAction, LikeStatus, PublicPost}}, RequestFailed}; 
 use uchat_query::{post::{Post, Reaction}, AsyncConnection};
 
 use crate::{error::{ApiError, ApiResult}, extractor::{DbConnection, UserSession}, AppState};
@@ -39,7 +39,19 @@ pub fn to_public(
                     None => None
                 }
             },
-            like_status: LikeStatus::NoReaction,
+            // Display current like status
+            like_status: {
+                match session {
+                    Some(session) => {
+                        match uchat_query::post::get_reaction(conn, post.id, session.user_id)? {
+                            Some(reaction) if reaction.like_status == 1 => LikeStatus::Like,
+                            Some(reaction) if reaction.like_status == -1 => LikeStatus::Dislike,
+                            _ => LikeStatus::NoReaction
+                        }
+                    }
+                    None => LikeStatus::NoReaction
+                }
+            },
             // We check the existenc of session here, if not exist, set to false
             bookmarked: {
                 match session {
@@ -150,6 +162,45 @@ impl AuthorizedApiRequest for Bookmark {
         ))
     }
 }
+
+#[async_trait]
+impl AuthorizedApiRequest for Boost {
+    type Response = (StatusCode, Json<BoostOk>);
+
+    #[tracing::instrument(
+        name = "Add or remove a boost",
+        skip_all,
+        fields(
+            post_id = ?self.post_id,
+            action = ?self.action
+        )
+    )]
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        match self.action {
+            BoostAction::Add => {
+                uchat_query::post::boost(&mut conn, session.user_id, self.post_id, Utc::now())?;
+            }
+
+            BoostAction::Remove => {
+                uchat_query::post::delete_boost(&mut conn, session.user_id, self.post_id)?;
+            }
+        }
+
+        tracing::info!("Boost a post successfully");
+        Ok((
+            StatusCode::OK,
+            Json(BoostOk {
+                status: self.action
+            })
+        ))
+    }
+}
+
 
 #[async_trait]
 impl AuthorizedApiRequest for React {
