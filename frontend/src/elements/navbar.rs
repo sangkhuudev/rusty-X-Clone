@@ -1,9 +1,8 @@
 #![allow(non_snake_case)]
 
 use crate::icon::*;
-use crate::{page::Route, prelude::*};
+use crate::prelude::*;
 use dioxus::prelude::*;
-
 #[derive(Props, PartialEq, Clone)]
 pub struct NavButtonProps {
     img: String,

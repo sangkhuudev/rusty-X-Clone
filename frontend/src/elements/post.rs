@@ -1,7 +1,8 @@
 #![allow(non_snake_case)]
 
-use crate::page::post::actionbar::Actionbar;
-use crate::{page::post::content::Content, POSTMANAGER};
+use crate::prelude::post::actionbar::Actionbar;
+use crate::prelude::post::content::Content;
+use crate::prelude::*;
 use dioxus::prelude::*;
 use indexmap::IndexMap;
 use uchat_domain::PostId;
@@ -107,7 +108,7 @@ pub fn PublicPostEntry(post_id: PostId) -> Element {
                 Header { post: this_post.clone()},
                 // reply to
                 // content
-                Content{ post: this_post.clone()},
+                Content { post: this_post.clone()},
                 // action bar
                 Actionbar {
                     post_id: this_post.id

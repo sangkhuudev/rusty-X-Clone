@@ -1,9 +1,7 @@
 #![allow(non_snake_case)]
 
 use crate::elements::keyed_notifications_box::{KeyedNotifications, KeyedNotificationsBox};
-use crate::page::Route;
-use crate::util::ApiClient;
-use crate::{fetch_json, prelude::*};
+use crate::prelude::*;
 use dioxus::prelude::*;
 use dioxus_logger::tracing::{error, info};
 use uchat_domain::{Password, Username};

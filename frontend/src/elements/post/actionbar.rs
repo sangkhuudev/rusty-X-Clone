@@ -1,21 +1,13 @@
 #![allow(non_snake_case)]
 
+use crate::prelude::post::quick_response::QuickResponse;
+use crate::prelude::*;
 use chrono::Duration;
 use dioxus::prelude::*;
 use uchat_domain::PostId;
 use uchat_endpoint::post::{
     endpoint::{Bookmark, BookmarkOk, Boost, BoostOk, React, ReactOk},
     types::{BookmarkAction, BoostAction, LikeStatus},
-};
-
-use crate::{
-    async_handler, fetch_json,
-    icon::{
-        ICON_BOOKMARK, ICON_BOOKMARK_SAVED, ICON_BOOST, ICON_BOOSTED, ICON_DISLIKE,
-        ICON_DISLIKE_SELECTED, ICON_LIKE, ICON_LIKE_SELECTED,
-    },
-    util::ApiClient,
-    POSTMANAGER, TOASTER,
 };
 
 #[component]
@@ -177,14 +169,44 @@ pub fn LikeDislike(post_id: PostId, like_status: LikeStatus, likes: i64, dislike
 }
 
 #[component]
+pub fn Comment(opened: Signal<bool>) -> Element {
+    let comment_onclick = sync_handler!([opened], move |_| {
+        let current = *opened.read();
+        opened.set(!current);
+    });
+
+    rsx!(
+        div {
+            class: "cursor-pointer",
+            onclick: comment_onclick,
+            img {
+                class: "actionbar-icon",
+                src: "{ICON_MESSAGES}"
+            }
+        }
+    )
+}
+
+#[component]
+pub fn QuickResponseBox(post_id: PostId, opened: Signal<bool>) -> Element {
+    let element = match *opened.read() {
+        true => Some(rsx!(QuickResponse { post_id, opened })),
+        false => None,
+    };
+
+    rsx!({ element })
+}
+//-------------------------------------------------------------------------------------------
+#[component]
 pub fn Actionbar(post_id: PostId) -> Element {
     let post_manager = POSTMANAGER.read();
     let this_post = post_manager.get(&post_id).unwrap();
     let this_post_id = this_post.id;
+    let quick_response_opened = use_signal(|| false);
 
     rsx!(
         div {
-            key: "{this_post.id.to_string()}",
+            key: "{this_post_id.to_string()}",
             class: "flex flex-row justify-between w-full opacity-70 mt-4",
             // boost
             Boost {
@@ -206,8 +228,15 @@ pub fn Actionbar(post_id: PostId) -> Element {
                 dislikes: this_post.dislikes
             }
             // comment
+            Comment {
+                opened: quick_response_opened
+            }
         }
 
-        // quick response
+        // quick response box
+        QuickResponseBox {
+            post_id: this_post_id,
+            opened: quick_response_opened
+        }
     )
 }

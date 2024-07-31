@@ -1,11 +1,10 @@
 #![allow(non_snake_case)]
 
 use crate::page::post::PublicPostEntry;
+use crate::prelude::*;
 use chrono::Duration;
 use dioxus::prelude::*;
 use uchat_endpoint::post::endpoint::{TrendingPost, TrendingPostOk};
-
-use crate::{fetch_json, ApiClient, POSTMANAGER, TOASTER};
 
 pub fn Trending() -> Element {
     let api_client = ApiClient::global();
