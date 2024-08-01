@@ -5,6 +5,13 @@ Upgrading Dioxus to the latest version presented significant challenges. The new
 
 Despite these hurdles, the experience was invaluable. It honed my skills in Rust and provided insights into the complexities of web development, particularly in managing a full-stack application with a focus on performance and reliability. The project, while not an exact clone of Twitter, showcases the robust capabilities of Rust in building complex web applications.
 
+## Tech Stack
+
+- **Database**: PostgreSQL
+- **Backend**: Axum
+- **Frontend**: Dioxus
+- **Logging**: tracing, tracing-subscriber
+
 ## Design Directory Overview
 The `design/` directory contains a some design-related files:
 
@@ -143,10 +150,10 @@ cargo run -p project-init
 
 ### Development Server
 
-To run a dev server for the frontend and open a new browser window:
+To run a dev server for the frontend and open a new browser window (port 8080):
 
 ```bash
-dx serve --open
+dx serve 
 ```
 
 To run the backend server:

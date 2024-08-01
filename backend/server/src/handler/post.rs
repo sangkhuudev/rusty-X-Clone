@@ -1,20 +1,20 @@
 use anyhow::anyhow;
 use axum::{async_trait, http::StatusCode, Json};
 use chrono::Utc;
+use crate::handler::save_image;
 use uchat_domain::Username;
 use uchat_endpoint::{
-    post::{
+    app_url::{self, user_content}, post::{
         endpoint::{
             Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk, TrendingPost,
             TrendingPostOk,
         },
-        types::{BookmarkAction, BoostAction, LikeStatus, PublicPost},
-    },
-    RequestFailed,
+        types::{BookmarkAction, BoostAction, Content, ImageKind, LikeStatus, PublicPost},
+    }, RequestFailed
 };
 use uchat_query::{
     post::{Post, Reaction},
-    AsyncConnection,
+    AsyncConnection, ImageId,
 };
 
 use crate::{
@@ -30,7 +30,20 @@ pub fn to_public(
     post: Post,
     session: Option<&UserSession>,
 ) -> ApiResult<PublicPost> {
-    if let Ok(content) = serde_json::from_value(post.content.0) {
+    if let Ok(mut content) = serde_json::from_value(post.content.0) {
+        match content {
+            Content::Image(ref mut img) => {
+                if let ImageKind::Id(id) = img.kind {
+                    let url = app_url::domain_and(user_content::ROOT)
+                        .join(user_content::IMAGE)
+                        .unwrap()
+                        .join(&id.to_string())
+                        .unwrap();
+                    img.kind = ImageKind::Url(url);
+                }
+            }
+            _ => {}
+        }
         let aggregate_reactions = uchat_query::post::aggregate_reactions(conn, post.id)?;
 
         Ok(PublicPost {
@@ -108,7 +121,15 @@ impl AuthorizedApiRequest for NewPost {
         session: UserSession,
         _state: AppState,
     ) -> ApiResult<Self::Response> {
-        let post = Post::new(session.user_id, self.content, self.options)?;
+        let mut content = self.content;
+        if let Content::Image(ref mut img) = content {
+            if let ImageKind::DataUrl(data) = &img.kind {
+                let id = ImageId::new();
+                save_image(id, data).await?;
+                img.kind = ImageKind::Id(id);
+            }
+        }
+        let post = Post::new(session.user_id, content, self.options)?;
         let post_id = uchat_query::post::new(&mut conn, post)?;
         tracing::info!(post_id = ?post_id, "New post created successfully");
 

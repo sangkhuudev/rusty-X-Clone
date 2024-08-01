@@ -18,13 +18,19 @@ use uchat_endpoint::{
 };
 
 use crate::{
-    handler::{with_handler, with_public_handler},
+    handler::{load_image, with_handler, with_public_handler},
     AppState,
 };
 
 pub async fn new_router(state: AppState) -> Router {
+    let image_url = {
+        use uchat_endpoint::app_url::user_content;
+        format!("{}{}", user_content::ROOT, user_content::IMAGE)
+    };
+
     let public_router = Router::new()
         .route("/", get(move || async { "This is a route page" }))
+        .route(&format!("/{}:id",image_url), get(load_image))
         .route(CreateUser::URL, post(with_public_handler::<CreateUser>))
         .route(Login::URL, post(with_public_handler::<Login>));
 

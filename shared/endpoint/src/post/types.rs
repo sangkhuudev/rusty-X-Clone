@@ -1,18 +1,34 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uchat_domain::{Headline, Message, PostId, UserId, Username};
+use uchat_domain::{Caption, Headline, ImageId, Message, PostId, UserId, Username};
+use url::Url;
 
 use crate::user::types::PublicUserProfile;
 
+//-------------------------------------------------------------------------------------
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Chat {
     pub headline: Option<Headline>,
     pub message: Message,
 }
 
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ImageKind {
+    DataUrl(String),
+    Id(ImageId),
+    Url(Url)
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Image {
+    pub kind: ImageKind,
+    pub caption: Option<Caption>,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Content {
     Chat(Chat),
+    Image(Image),
 }
 
 impl From<Chat> for Content {
@@ -21,6 +37,12 @@ impl From<Chat> for Content {
     }
 }
 
+impl From<Image> for Content {
+    fn from(value: Image) -> Self {
+        Content::Image(value)
+    }
+}
+//-------------------------------------------------------------------------------------
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NewPostOptions {
     pub reply_to: Option<PostId>,
@@ -37,6 +59,8 @@ impl Default for NewPostOptions {
         }
     }
 }
+
+//-------------------------------------------------------------------------------------
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub enum LikeStatus {
     Like,
@@ -61,6 +85,7 @@ pub struct PublicPost {
     pub boosts: i64,
 }
 
+//-------------------------------------------------------------------------------------
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum BookmarkAction {
     Add,

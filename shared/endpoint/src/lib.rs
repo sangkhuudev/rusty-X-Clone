@@ -1,6 +1,7 @@
 use post::endpoint::{Bookmark, Boost, NewPost, React, TrendingPost};
 use serde::{Deserialize, Serialize};
 use user::endpoint::{CreateUser, Login};
+use load_dotenv::load_dotenv;
 
 pub mod post;
 pub mod user;
@@ -26,6 +27,31 @@ pub struct RequestFailed {
     pub msg: String,
 }
 
+//--------------------------------------------------------------
+// Loading .env file
+load_dotenv!();
+
+pub mod app_url {
+    use std::str::FromStr;
+
+    use url::Url;
+
+    pub const API_URL: &str = std::env!("API_URL");
+
+    pub fn domain_and(fragment: &str) -> Url {
+        Url::from_str(API_URL)
+            .and_then(|url| url.join(fragment))
+            .unwrap()
+    }
+
+    pub mod user_content {
+        pub const ROOT: &str = "usercontent/";
+        pub const IMAGE: &str = "image/";
+    }
+}
+
+
+//---------------------------------------------------------------
 // public routes
 route!("/account/create" => CreateUser);
 route!("/account/login" => Login);

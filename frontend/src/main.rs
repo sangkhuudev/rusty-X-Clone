@@ -15,7 +15,7 @@ use dioxus_logger::tracing::{info, Level};
 use page::{PostManager, Toaster};
 use util::ApiClient;
 
-pub const ROOT_API_URL: &str = "http://127.0.0.1:8000/";
+pub const ROOT_API_URL: &str = uchat_endpoint::app_url::API_URL;
 
 pub static TOASTER: GlobalSignal<Toaster> = Signal::global(|| Toaster::default());
 pub static POSTMANAGER: GlobalSignal<PostManager> = Signal::global(|| PostManager::default());
