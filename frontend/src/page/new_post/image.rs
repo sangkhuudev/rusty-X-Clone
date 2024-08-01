@@ -10,6 +10,7 @@ use uchat_endpoint::post::{
     endpoint::{NewPost, NewPostOk},
     types::{Image, ImageKind, NewPostOptions},
 };
+use web_sys::HtmlInputElement;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct PageState {
@@ -27,6 +28,46 @@ impl PageState {
         }
         true
     }
+}
+
+#[component]
+pub fn ImageInput(page_state: Signal<PageState>) -> Element {
+    let image_oninput = move |_| {
+        async move {
+            // this is used for unchecked_into()
+            use gloo_file::{futures::read_as_data_url, File};
+            use wasm_bindgen::JsCast;
+
+            let element_html = crate::util::document()
+                .get_element_by_id("image-input")
+                .unwrap()
+                .unchecked_into::<HtmlInputElement>();
+            let file: File = element_html.files().unwrap().get(0).unwrap().into();
+
+            match read_as_data_url(&file).await {
+                Ok(data) => page_state.with_mut(|state| state.image = Some(data)),
+                Err(e) => TOASTER
+                    .write()
+                    .error(format!("Failed to load file: {}", e), Duration::seconds(5)),
+            }
+        }
+    };
+
+    rsx!(
+        div {
+            label {
+                r#for: "image-input",
+                "Upload image"
+            }
+            input {
+                class: "w-full",
+                id: "image-input",
+                r#type: "file",
+                accept: "image/*",
+                oninput: image_oninput
+            }
+        }
+    )
 }
 
 #[component]
@@ -111,6 +152,9 @@ pub fn NewImage() -> Element {
             class: "flex flex-col gap-4",
             onsubmit: form_onsubmit,
             // Image input
+            ImageInput {
+                page_state: page_state
+            }
             // Image preview
             CaptionInput {
                 page_state: page_state
