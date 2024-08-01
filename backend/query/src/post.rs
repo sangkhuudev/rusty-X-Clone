@@ -6,7 +6,7 @@ use chrono::Utc;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uchat_domain::{PostId, UserId};
-use uchat_endpoint::post::types;
+use uchat_endpoint::post::types::{self, Content as EndpointContent};
 use uuid::Uuid;
 
 #[derive(Clone, Debug, DieselNewType, Deserialize, Serialize)]
@@ -47,7 +47,23 @@ pub fn new(conn: &mut PgConnection, post: Post) -> Result<PostId, DieselError> {
         diesel::insert_into(schema::posts::table)
             .values(&post)
             .execute(conn)?;
-        Ok(post.id)
+
+        match serde_json::from_value::<EndpointContent>(post.content.0) {
+            Ok(EndpointContent::Poll(poll)) => {
+                for choice in &poll.choices {
+                    use schema::poll_choices::{self, columns};
+                    diesel::insert_into(poll_choices::table)
+                        .values((
+                            columns::post_id.eq(post.id),
+                            columns::id.eq(choice.id),
+                            columns::choice.eq(choice.description.as_ref()),
+                        ))
+                        .execute(conn)?;
+                }
+                Ok(post.id)
+            }
+            _ => Ok(post.id),
+        }
     })
 }
 

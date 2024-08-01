@@ -1,6 +1,9 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uchat_domain::{Caption, Headline, ImageId, Message, PostId, UserId, Username};
+use uchat_domain::{
+    Caption, Headline, ImageId, Message, PollChoiceDescription, PollChoiceId, PollHeadline, PostId,
+    UserId, Username,
+};
 use url::Url;
 
 use crate::user::types::PublicUserProfile;
@@ -25,9 +28,24 @@ pub struct Image {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PollChoice {
+    pub id: PollChoiceId,
+    pub num_votes: i64,
+    pub description: PollChoiceDescription,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Poll {
+    pub headline: PollHeadline,
+    pub choices: Vec<PollChoice>,
+    pub voted: Option<PollChoiceId>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Content {
     Chat(Chat),
     Image(Image),
+    Poll(Poll),
 }
 
 impl From<Chat> for Content {
@@ -41,6 +59,13 @@ impl From<Image> for Content {
         Content::Image(value)
     }
 }
+
+impl From<Poll> for Content {
+    fn from(value: Poll) -> Self {
+        Content::Poll(value)
+    }
+}
+
 //-------------------------------------------------------------------------------------
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NewPostOptions {

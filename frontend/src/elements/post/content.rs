@@ -58,5 +58,6 @@ pub fn Content(post: PublicPost) -> Element {
             post_id: post.id,
             content: content
         }),
+        _ => rsx!( div {""}),
     })
 }
