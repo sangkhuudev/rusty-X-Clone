@@ -139,3 +139,9 @@ impl From<BoostAction> for bool {
         }
     }
 }
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum VoteCast {
+    Yes,
+    AlreadyVoted,
+}

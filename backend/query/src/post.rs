@@ -5,10 +5,13 @@ use chrono::DateTime;
 use chrono::Utc;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use uchat_domain::PollChoiceId;
 use uchat_domain::{PostId, UserId};
+use uchat_endpoint::post::types::VoteCast;
 use uchat_endpoint::post::types::{self, Content as EndpointContent};
 use uuid::Uuid;
 
+//------------------------------------------------------------------------------
 #[derive(Clone, Debug, DieselNewType, Deserialize, Serialize)]
 pub struct Content(pub serde_json::Value);
 
@@ -41,6 +44,8 @@ impl Post {
         })
     }
 }
+
+//------------------------------------------------------------------------------
 
 pub fn new(conn: &mut PgConnection, post: Post) -> Result<PostId, DieselError> {
     conn.transaction::<PostId, DieselError, _>(|conn| {
@@ -83,6 +88,7 @@ pub fn get_trending(conn: &mut PgConnection) -> Result<Vec<Post>, DieselError> {
         .get_results(conn)
 }
 
+//------------------------------------------------------------------------------
 pub fn bookmark(
     conn: &mut PgConnection,
     user_id: UserId,
@@ -156,6 +162,7 @@ pub fn get_bookmark(
     }
 }
 
+//------------------------------------------------------------------------------
 #[derive(Debug, Clone, Serialize, Deserialize, DieselNewType)]
 pub struct ReactionData(serde_json::Value);
 
@@ -200,6 +207,8 @@ pub fn get_reaction(
     }
 }
 
+//------------------------------------------------------------------------------
+
 #[derive(Clone, Debug, Serialize)]
 pub struct AggregatePostInfo {
     pub post_id: PostId,
@@ -242,6 +251,7 @@ pub fn aggregate_reactions(
     })
 }
 
+//------------------------------------------------------------------------------
 pub fn boost(
     conn: &mut PgConnection,
     user_id: UserId,
@@ -308,5 +318,78 @@ pub fn get_boost(
                 Some(n) => n == 1,
                 None => false,
             })
+    }
+}
+
+//------------------------------------------------------------------------------
+
+pub fn vote(
+    conn: &mut PgConnection,
+    user_id: UserId,
+    post_id: PostId,
+    choice_id: PollChoiceId,
+) -> Result<VoteCast, DieselError> {
+    // Change names of user_id and post_id because we dont want to mess with database.
+    let uid = user_id;
+    let pid = post_id;
+    let cid = choice_id;
+    conn.transaction::<VoteCast, DieselError, _>(|conn| {
+        use crate::schema::poll_votes::dsl::*;
+        diesel::insert_into(poll_votes)
+            .values((user_id.eq(uid), post_id.eq(pid), choice_id.eq(cid)))
+            .on_conflict((user_id, post_id))
+            .do_nothing()
+            .execute(conn)
+            .map(|n| {
+                if n == 1 {
+                    VoteCast::Yes
+                } else {
+                    VoteCast::AlreadyVoted
+                }
+            })
+    })
+}
+
+pub fn did_vote(
+    conn: &mut PgConnection,
+    user_id: UserId,
+    post_id: PostId,
+) -> Result<Option<PollChoiceId>, DieselError> {
+    let uid = user_id;
+    let pid = post_id;
+    {
+        use crate::schema::poll_votes::dsl::*;
+
+        poll_votes
+            .filter(post_id.eq(pid))
+            .filter(user_id.eq(uid))
+            .select(choice_id)
+            .get_result(conn)
+            .optional()
+    }
+}
+
+pub struct PollResults {
+    pub post_id: PostId,
+    pub results: Vec<(PollChoiceId, i64)>,
+}
+pub fn get_poll_results(
+    conn: &mut PgConnection,
+    post_id: PostId,
+) -> Result<PollResults, DieselError> {
+    let pid = post_id;
+    {
+        use crate::schema::poll_votes::dsl::*;
+        use diesel::dsl::count;
+        let results = poll_votes
+            .filter(post_id.eq(pid))
+            .group_by(choice_id)
+            .select((choice_id, count(choice_id)))
+            .load::<(PollChoiceId, i64)>(conn)?;
+
+        Ok(PollResults {
+            post_id: pid,
+            results,
+        })
     }
 }
