@@ -1,16 +1,18 @@
+use crate::handler::save_image;
 use anyhow::anyhow;
 use axum::{async_trait, http::StatusCode, Json};
 use chrono::Utc;
-use crate::handler::save_image;
 use uchat_domain::Username;
 use uchat_endpoint::{
-    app_url::{self, user_content}, post::{
+    app_url::{self, user_content},
+    post::{
         endpoint::{
             Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk, TrendingPost,
             TrendingPostOk,
         },
         types::{BookmarkAction, BoostAction, Content, ImageKind, LikeStatus, PublicPost},
-    }, RequestFailed
+    },
+    RequestFailed,
 };
 use uchat_query::{
     post::{Post, Reaction},

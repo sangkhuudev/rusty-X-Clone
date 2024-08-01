@@ -1,7 +1,7 @@
+use load_dotenv::load_dotenv;
 use post::endpoint::{Bookmark, Boost, NewPost, React, TrendingPost};
 use serde::{Deserialize, Serialize};
 use user::endpoint::{CreateUser, Login};
-use load_dotenv::load_dotenv;
 
 pub mod post;
 pub mod user;
@@ -49,7 +49,6 @@ pub mod app_url {
         pub const IMAGE: &str = "image/";
     }
 }
-
 
 //---------------------------------------------------------------
 // public routes

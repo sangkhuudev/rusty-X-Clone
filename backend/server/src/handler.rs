@@ -3,14 +3,21 @@ use crate::{
     extractor::{DbConnection, UserSession},
     AppState,
 };
-use axum::{async_trait, body::Body, extract::{Path, State}, http::{header::CONTENT_TYPE, StatusCode}, response::{IntoResponse, Response}, Json};
-use base64::{ Engine as _ ,engine::general_purpose};
+use axum::{
+    async_trait,
+    body::Body,
+    extract::{Path, State},
+    http::{header::CONTENT_TYPE, StatusCode},
+    response::{IntoResponse, Response},
+    Json,
+};
+use base64::{engine::general_purpose, Engine as _};
+use core::fmt::Debug;
+use serde::Deserialize;
+use std::path::PathBuf;
 use tokio::fs;
 use uchat_query::ImageId;
 use uuid::Uuid;
-use core::fmt::Debug;
-use std::path::PathBuf;
-use serde::Deserialize;
 
 pub mod post;
 pub mod user;
@@ -70,9 +77,7 @@ pub async fn save_image<T: AsRef<[u8]>>(id: ImageId, data: T) -> Result<(), ApiE
     Ok(())
 }
 
-pub async fn load_image(
-    Path(img_id): Path<Uuid>,
-) -> Result<Response<Body>, ApiError> {
+pub async fn load_image(Path(img_id): Path<Uuid>) -> Result<Response<Body>, ApiError> {
     let mut path = PathBuf::from(USER_CONTEND_DIR);
     path.push(img_id.to_string());
     let raw = fs::read_to_string(path).await?;
@@ -95,13 +100,10 @@ pub async fn load_image(
         // 1: ;base64
         .0;
     let image_data = general_purpose::STANDARD.decode(image_data).unwrap();
-    
-    Ok(
-        Response::builder()
-            .status(StatusCode::OK)
-            .header(CONTENT_TYPE, mime)
-            .body(Body::from(image_data))
-            .unwrap()
-    )
-    
+
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .header(CONTENT_TYPE, mime)
+        .body(Body::from(image_data))
+        .unwrap())
 }

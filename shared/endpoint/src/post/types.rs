@@ -12,12 +12,11 @@ pub struct Chat {
     pub message: Message,
 }
 
-
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ImageKind {
     DataUrl(String),
     Id(ImageId),
-    Url(Url)
+    Url(Url),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Image {

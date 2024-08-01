@@ -19,7 +19,6 @@ impl Message {
     pub const MAX_CHARS: usize = 100;
 }
 
-
 #[nutype(
     validate(not_empty, len_char_max = 60),
     derive(Clone, Debug, Serialize, Deserialize, PartialEq, AsRef)

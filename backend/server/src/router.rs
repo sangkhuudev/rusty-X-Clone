@@ -30,7 +30,7 @@ pub async fn new_router(state: AppState) -> Router {
 
     let public_router = Router::new()
         .route("/", get(move || async { "This is a route page" }))
-        .route(&format!("/{}:id",image_url), get(load_image))
+        .route(&format!("/{}:id", image_url), get(load_image))
         .route(CreateUser::URL, post(with_public_handler::<CreateUser>))
         .route(Login::URL, post(with_public_handler::<Login>));
 

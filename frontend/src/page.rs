@@ -31,6 +31,9 @@ pub enum Route {
         #[route("/post/new_chat")]
         NewChat {},
 
+        #[route("/post/new_image")]
+        NewImage {},
+
         #[route("/posts/trending")]
         Trending {},
 
