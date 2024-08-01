@@ -64,7 +64,6 @@ pub async fn with_handler<'a, Req>(
 where
     Req: AuthorizedApiRequest + Deserialize<'a> + Debug,
 {
-    tracing::debug!("with_handler called with payload: {:?}", payload);
     payload.process_request(conn, session, state).await
 }
 

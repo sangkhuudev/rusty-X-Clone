@@ -71,6 +71,26 @@ pub fn ImageInput(page_state: Signal<PageState>) -> Element {
 }
 
 #[component]
+pub fn ImagePreview(page_state: Signal<PageState>) -> Element {
+    let image_data = &page_state.read().image;
+    let Preview = if let Some(ref image) = image_data {
+        rsx!(img {
+            class: "max-w-[calc(var(--content-max-width)/2)] max-h[40vh]",
+            src: "{image}"
+        })
+    } else {
+        rsx!( div {"No image uploaded"} )
+    };
+
+    rsx!(
+        div {
+            class: "flex flex-row justify-center",
+            {Preview}
+        }
+    )
+}
+
+#[component]
 pub fn CaptionInput(page_state: Signal<PageState>) -> Element {
     let wrong_len = maybe_class!(
         "err-text-color",
@@ -156,6 +176,9 @@ pub fn NewImage() -> Element {
                 page_state: page_state
             }
             // Image preview
+            ImagePreview {
+                page_state: page_state
+            }
             CaptionInput {
                 page_state: page_state
             }
