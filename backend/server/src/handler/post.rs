@@ -15,7 +15,7 @@ use uchat_endpoint::{
     RequestFailed,
 };
 use uchat_query::{
-    post::{Post, Reaction},
+    post::{did_vote, Post, Reaction},
     AsyncConnection, ImageId,
 };
 
@@ -42,6 +42,19 @@ pub fn to_public(
                         .join(&id.to_string())
                         .unwrap();
                     img.kind = ImageKind::Url(url);
+                }
+            }
+            Content::Poll(ref mut poll) => {
+                for (id, result) in uchat_query::post::get_poll_results(conn, post.id)?.results {
+                    for choice in poll.choices.iter_mut() {
+                        if choice.id == id {
+                            choice.num_votes = result;
+                            break;
+                        }
+                    }
+                }
+                if let Some(session) = session {
+                    poll.voted = did_vote(conn, session.user_id, post.id)?;
                 }
             }
             _ => {}
