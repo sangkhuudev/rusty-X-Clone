@@ -34,6 +34,9 @@ pub enum Route {
         #[route("/post/new_image")]
         NewImage {},
 
+        #[route("/post/new_poll")]
+        NewPoll {},
+
         #[route("/posts/trending")]
         Trending {},
 

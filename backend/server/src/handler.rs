@@ -85,7 +85,7 @@ pub async fn load_image(Path(img_id): Path<Uuid>) -> Result<Response<Body>, ApiE
     // data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==
     let (header, image_data) = raw.split_once(",").unwrap();
     //header=data:text/plain;base64
-    // image_date=SGVsbG8sIFdvcmxkIQ==
+    // image_data=SGVsbG8sIFdvcmxkIQ==
     // mime=text/plain;base64
     let mime = header
         .split_once("data:")
