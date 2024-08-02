@@ -14,8 +14,6 @@ use uchat_endpoint::post::{
     },
 };
 
-use super::maybe_class;
-
 #[component]
 pub fn Chat(post_id: PostId, content: EndpointChat) -> Element {
     let HeadLine = content.headline.as_ref().map(|headline| {
