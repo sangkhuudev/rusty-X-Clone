@@ -168,6 +168,43 @@ pub fn NewImage() -> Element {
         }
     });
     rsx!(
+        Appbar {
+            title: "New image",
+            AppbarImgButton {
+                click_handler: move |_| {
+                    router.push(Route::NewChat {});
+                },
+                img: ICON_MESSAGES,
+                label: "Chat",
+                title: "Post a new chat",
+            },
+            AppbarImgButton {
+                click_handler: move |_| {},
+                img: ICON_IMAGE,
+                label: "Image",
+                title: "Post a new image",
+                disabled: true,
+                append_class: appbar::BUTTON_SELECTED,
+            },
+            AppbarImgButton {
+                click_handler: move |_| {
+                    router.push(Route::NewPoll {});
+                },
+                img: ICON_POLL,
+                label: "Poll",
+                title: "Post a new poll",
+
+            },
+            AppbarImgButton {
+                click_handler: move |_| {
+                    navigator().go_back();
+                },
+                img: ICON_BACK,
+                label: "Back",
+                title: "Go to the previous page",
+            }
+        }
+
         form {
             class: "flex flex-col gap-4",
             onsubmit: form_onsubmit,

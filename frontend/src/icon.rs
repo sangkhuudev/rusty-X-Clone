@@ -1,5 +1,6 @@
 // use manganis::*;
 
+pub const ICON_BACK: &str = manganis::mg!(file("assets/icons/icon-back.svg"));
 pub const ICON_POLL: &str = manganis::mg!(file("assets/icons/icon-poll.svg"));
 pub const ICON_IMAGE: &str = manganis::mg!(file("assets/icons/icon-image.svg"));
 pub const ICON_MESSAGES: &str = manganis::mg!(file("assets/icons/icon-messages.svg"));

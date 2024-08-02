@@ -3,6 +3,7 @@
 use crate::prelude::*;
 use dioxus::prelude::*;
 
+pub const BUTTON_SELECTED: &str = "border-slate-600";
 //-------------------------------------------------------------------------------------------
 
 #[derive(Props, PartialEq, Clone)]
@@ -11,7 +12,7 @@ pub struct AppbarImgButtonProps {
     click_handler: Option<EventHandler<MouseEvent>>,
     disabled: Option<bool>,
     img: String,
-    lable: String,
+    label: String,
     title: Option<String>,
 }
 
@@ -24,7 +25,7 @@ pub fn AppbarImgButton(props: AppbarImgButtonProps) -> Element {
             disabled: props.disabled.unwrap_or_default(),
             onclick: move |ev| {
                 if let Some(callback) = props.click_handler {
-                    callback(ev);
+                    callback.call(ev)
                 }
             },
             title: props.title,
@@ -34,7 +35,7 @@ pub fn AppbarImgButton(props: AppbarImgButtonProps) -> Element {
             },
             span {
                 class: "text-sm",
-                "{props.lable}"
+                "{props.label}"
             }
         }
     )
@@ -50,7 +51,7 @@ pub fn Appbar(props: AppbarProps) -> Element {
     rsx!(
         div {
             class: "max-w-[var(--content-max-width)] h-[var(--appbar-height)]
-                    fixed top-0 right-0 mx-auto z-50 bg-slate-200",
+                    fixed top-0 right-0 left-0 mx-auto z-50",
             div {
                 class: "flex flex-row items-center w-full h-full pr-5 gap-8",
                 div {

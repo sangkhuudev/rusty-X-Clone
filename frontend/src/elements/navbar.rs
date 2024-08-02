@@ -25,7 +25,10 @@ pub fn NewPostPopup(hide: Signal<bool>) -> Element {
                 w-28 items-center {hide_class} text-white text-sm navbar-bg-color",
             div {
                 class: BUTTON_CLASS,
-                onclick: move |_| {},
+                onclick: move |_| {
+                    router().push(Route::NewPoll {});
+                    hide.set(false);
+                },
                 img {
                     class: "invert",
                     src: "{ICON_POLL}"
@@ -34,7 +37,10 @@ pub fn NewPostPopup(hide: Signal<bool>) -> Element {
             }
             div {
                 class: BUTTON_CLASS,
-                onclick: move |_| {},
+                onclick: move |_| {
+                    router().push(Route::NewImage {});
+                    hide.set(false);
+                },
                 img {
                     class: "invert",
                     src: "{ICON_IMAGE}",
@@ -46,7 +52,7 @@ pub fn NewPostPopup(hide: Signal<bool>) -> Element {
                 onclick: move |_| {
                     // Redirect to /post/new_chat
                     router().push(Route::NewChat {});
-                    hide.set(true);
+                    hide.set(false);
                 },
                 img {
                     class: "invert",
@@ -99,7 +105,7 @@ pub fn Navbar() -> Element {
                     img: "{ICON_HOME}",
                     label: "Home",
                     onclick: move |_| {
-                        // router().push(Route::Home);
+                        router().push(Route::Home {});
                     }
                 }
 
@@ -107,7 +113,7 @@ pub fn Navbar() -> Element {
                     img: "{ICON_TRENDING}",
                     label: "Trending",
                     onclick: move |_| {
-                        // router().push(Route::Login);
+                        router().push(Route::Trending {});
                     }
                 }
 
