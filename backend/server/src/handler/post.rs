@@ -8,7 +8,7 @@ use uchat_endpoint::{
     post::{
         endpoint::{
             Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk, TrendingPost,
-            TrendingPostOk,
+            TrendingPostOk, Vote, VoteOk,
         },
         types::{BookmarkAction, BoostAction, Content, ImageKind, LikeStatus, PublicPost},
     },
@@ -301,5 +301,31 @@ impl AuthorizedApiRequest for React {
                 dislikes: aggregate_reactions.dislikes,
             }),
         ))
+    }
+}
+
+#[async_trait]
+impl AuthorizedApiRequest for Vote {
+    type Response = (StatusCode, Json<VoteOk>);
+
+    #[tracing::instrument(
+        name = "Cast a new vote",
+        skip_all,
+        fields(
+            post_id = ?self.post_id,
+            // action = ?self.action
+        )
+    )]
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        let cast =
+            uchat_query::post::vote(&mut conn, session.user_id, self.post_id, self.choice_id)?;
+
+        tracing::info!("Cast a vote successfully");
+        Ok((StatusCode::OK, Json(VoteOk { cast })))
     }
 }

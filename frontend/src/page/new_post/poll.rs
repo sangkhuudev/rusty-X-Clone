@@ -180,27 +180,17 @@ pub fn NewPoll() -> Element {
                     PollHeadline::try_new(headline).expect("Headline can not be empty")
                 },
                 choices: {
-                    let sorted_choices = {
-                        let mut choices = page_state
-                            .read()
-                            .poll_choices
-                            .iter()
-                            .map(|(id, choice)| (*id, choice.clone()))
-                            .collect::<Vec<(usize, String)>>();
-
-                        choices.sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-                        choices
-                    };
-                    sorted_choices
-                        .iter()
-                        .map(|(_, choice)| {
+                    page_state
+                        .read()
+                        .poll_choices
+                        .values()
+                        .map(|choice| {
                             let id = PollChoiceId::new();
-                            let choice = PollChoice {
+                            PollChoice {
                                 id,
                                 num_votes: 0,
                                 description: PollChoiceDescription::try_new(choice).unwrap(),
-                            };
-                            choice
+                            }
                         })
                         .collect::<Vec<PollChoice>>()
                 },

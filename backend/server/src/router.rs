@@ -14,7 +14,7 @@ use tower_http::{
 };
 use tracing::Level;
 use uchat_endpoint::{
-    post::endpoint::{Bookmark, Boost, NewPost, React, TrendingPost},
+    post::endpoint::{Bookmark, Boost, NewPost, React, TrendingPost, Vote},
     user::endpoint::{CreateUser, Login},
     Endpoint,
 };
@@ -40,6 +40,7 @@ pub async fn new_router(state: AppState) -> Router {
         .route(NewPost::URL, post(with_handler::<NewPost>))
         .route(Bookmark::URL, post(with_handler::<Bookmark>))
         .route(Boost::URL, post(with_handler::<Boost>))
+        .route(Vote::URL, post(with_handler::<Vote>))
         .route(React::URL, post(with_handler::<React>))
         .route(TrendingPost::URL, post(with_handler::<TrendingPost>))
         .layer(DefaultBodyLimit::disable())

@@ -1,5 +1,5 @@
 use load_dotenv::load_dotenv;
-use post::endpoint::{Bookmark, Boost, NewPost, React, TrendingPost};
+use post::endpoint::{Bookmark, Boost, NewPost, React, TrendingPost, Vote};
 use serde::{Deserialize, Serialize};
 use user::endpoint::{CreateUser, Login};
 
@@ -60,4 +60,5 @@ route!("/post/new" => NewPost);
 route!("/post/bookmark" => Bookmark);
 route!("/post/boost" => Boost);
 route!("/post/react" => React);
+route!("/post/vote" => Vote);
 route!("/posts/trending" => TrendingPost);
