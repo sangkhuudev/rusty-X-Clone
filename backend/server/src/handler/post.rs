@@ -7,7 +7,8 @@ use uchat_endpoint::{
     app_url::{self, user_content},
     post::{
         endpoint::{
-            Bookmark, BookmarkOk, Boost, BoostOk, NewPost, NewPostOk, React, ReactOk, TrendingPost,
+            Bookmark, BookmarkOk, BookmarkedPost, BookmarkedPostOk, Boost, BoostOk, HomePost,
+            HomePostOk, LikedPost, LikedPostOk, NewPost, NewPostOk, React, ReactOk, TrendingPost,
             TrendingPostOk, Vote, VoteOk,
         },
         types::{BookmarkAction, BoostAction, Content, ImageKind, LikeStatus, PublicPost},
@@ -327,5 +328,80 @@ impl AuthorizedApiRequest for Vote {
 
         tracing::info!("Cast a vote successfully");
         Ok((StatusCode::OK, Json(VoteOk { cast })))
+    }
+}
+
+#[async_trait]
+impl AuthorizedApiRequest for HomePost {
+    type Response = (StatusCode, Json<HomePostOk>);
+
+    #[tracing::instrument(name = "Getting home posts", skip_all)]
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        let mut posts = vec![];
+        for post in uchat_query::post::get_home_posts(&mut conn, session.user_id)? {
+            let post_id = post.id;
+            match to_public(&mut conn, post, Some(&session)) {
+                Ok(post) => posts.push(post),
+                Err(e) => {
+                    tracing::error!(error = %e.error, post_id = ?post_id, "Post contains invalid data");
+                }
+            }
+        }
+        Ok((StatusCode::OK, Json(HomePostOk { posts })))
+    }
+}
+
+#[async_trait]
+impl AuthorizedApiRequest for LikedPost {
+    type Response = (StatusCode, Json<LikedPostOk>);
+
+    #[tracing::instrument(name = "Getting liked posts", skip_all)]
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        let mut posts = vec![];
+        for post in uchat_query::post::get_liked_posts(&mut conn, session.user_id)? {
+            let post_id = post.id;
+            match to_public(&mut conn, post, Some(&session)) {
+                Ok(post) => posts.push(post),
+                Err(e) => {
+                    tracing::error!(error = %e.error, post_id = ?post_id, "Post contains invalid data");
+                }
+            }
+        }
+        Ok((StatusCode::OK, Json(LikedPostOk { posts })))
+    }
+}
+
+#[async_trait]
+impl AuthorizedApiRequest for BookmarkedPost {
+    type Response = (StatusCode, Json<BookmarkedPostOk>);
+
+    #[tracing::instrument(name = "Getting bookmarked posts", skip_all)]
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        let mut posts = vec![];
+        for post in uchat_query::post::get_bookmarked_posts(&mut conn, session.user_id)? {
+            let post_id = post.id;
+            match to_public(&mut conn, post, Some(&session)) {
+                Ok(post) => posts.push(post),
+                Err(e) => {
+                    tracing::error!(error = %e.error, post_id = ?post_id, "Post contains invalid data");
+                }
+            }
+        }
+        Ok((StatusCode::OK, Json(BookmarkedPostOk { posts })))
     }
 }
