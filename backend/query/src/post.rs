@@ -1,6 +1,5 @@
-use crate::schema::posts;
-use crate::schema::reactions;
-use crate::{schema, DieselError};
+use crate::schema::*;
+use crate::DieselError;
 use chrono::DateTime;
 use chrono::Utc;
 use diesel::prelude::*;
@@ -16,7 +15,7 @@ use uuid::Uuid;
 pub struct Content(pub serde_json::Value);
 
 #[derive(Clone, Debug, Queryable, Selectable, Insertable)]
-#[diesel(table_name = schema::posts)]
+#[diesel(table_name = posts)]
 pub struct Post {
     pub id: PostId,
     pub user_id: UserId,
@@ -49,14 +48,14 @@ impl Post {
 
 pub fn new(conn: &mut PgConnection, post: Post) -> Result<PostId, DieselError> {
     conn.transaction::<PostId, DieselError, _>(|conn| {
-        diesel::insert_into(schema::posts::table)
+        diesel::insert_into(posts::table)
             .values(&post)
             .execute(conn)?;
 
         match serde_json::from_value::<EndpointContent>(post.content.0) {
             Ok(EndpointContent::Poll(poll)) => {
                 for choice in &poll.choices {
-                    use schema::poll_choices::{self, columns};
+                    use poll_choices::{self, columns};
                     diesel::insert_into(poll_choices::table)
                         .values((
                             columns::post_id.eq(post.id),
@@ -73,7 +72,7 @@ pub fn new(conn: &mut PgConnection, post: Post) -> Result<PostId, DieselError> {
 }
 
 pub fn get(conn: &mut PgConnection, post_id: PostId) -> Result<Post, DieselError> {
-    schema::posts::table
+    posts::table
         .filter(posts::columns::id.eq(post_id.as_uuid()))
         .get_result(conn)
 }
@@ -124,7 +123,7 @@ pub fn delete_bookmark(
     let pid = post_id;
     conn.transaction::<DeleteStatus, DieselError, _>(|conn| {
         use crate::schema::bookmarks::dsl::*;
-        diesel::delete(schema::bookmarks::table)
+        diesel::delete(bookmarks)
             .filter(user_id.eq(uid))
             .filter(post_id.eq(pid))
             .execute(conn)
@@ -167,7 +166,7 @@ pub fn get_bookmark(
 pub struct ReactionData(serde_json::Value);
 
 #[derive(Debug, Clone, Serialize, Deserialize, Queryable, Insertable)]
-#[diesel(table_name = schema::reactions)]
+#[diesel(table_name = reactions)]
 pub struct Reaction {
     pub user_id: UserId,
     pub post_id: PostId,
@@ -283,7 +282,7 @@ pub fn delete_boost(
     let pid = post_id;
     conn.transaction::<DeleteStatus, DieselError, _>(|conn| {
         use crate::schema::boosts::dsl::*;
-        diesel::delete(schema::boosts::table)
+        diesel::delete(boosts)
             .filter(user_id.eq(uid))
             .filter(post_id.eq(pid))
             .execute(conn)
@@ -392,4 +391,57 @@ pub fn get_poll_results(
             results,
         })
     }
+}
+
+pub fn get_home_posts(conn: &mut PgConnection, user_id: UserId) -> Result<Vec<Post>, DieselError> {
+    let uid = user_id;
+    let on_schedule = posts::time_posted.lt(Utc::now());
+    let public_only = posts::direct_message_to.is_null();
+    let order = posts::time_posted.desc();
+    let limit = 30;
+
+    followers::table
+        .filter(followers::user_id.eq(uid))
+        .inner_join(posts::table.on(followers::follows.eq(posts::user_id)))
+        .filter(on_schedule)
+        .filter(public_only)
+        .select(Post::as_select())
+        .order(order)
+        .limit(limit)
+        .union(
+            followers::table
+                .filter(followers::user_id.eq(uid))
+                .inner_join(boosts::table.on(boosts::user_id.eq(followers::follows)))
+                .inner_join(posts::table.on(posts::id.eq(boosts::post_id)))
+                .filter(on_schedule)
+                .filter(public_only)
+                .select(Post::as_select())
+                .order(order)
+                .limit(limit),
+        )
+        .get_results(conn)
+}
+
+pub fn get_liked_posts(conn: &mut PgConnection, user_id: UserId) -> Result<Vec<Post>, DieselError> {
+    reactions::table
+        .inner_join(posts::table)
+        .filter(reactions::user_id.eq(user_id))
+        .filter(reactions::like_status.eq(1))
+        .filter(posts::direct_message_to.is_null())
+        .select(Post::as_select())
+        .limit(30)
+        .get_results(conn)
+}
+
+pub fn get_bookmarked_posts(
+    conn: &mut PgConnection,
+    user_id: UserId,
+) -> Result<Vec<Post>, DieselError> {
+    bookmarks::table
+        .inner_join(posts::table)
+        .filter(bookmarks::user_id.eq(user_id))
+        .filter(posts::direct_message_to.is_null())
+        .select(Post::as_select())
+        .limit(30)
+        .get_results(conn)
 }

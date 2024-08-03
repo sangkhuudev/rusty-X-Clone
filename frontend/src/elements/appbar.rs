@@ -1,6 +1,5 @@
 #![allow(non_snake_case)]
 
-use crate::prelude::*;
 use dioxus::prelude::*;
 
 pub const BUTTON_SELECTED: &str = "border-slate-600";
