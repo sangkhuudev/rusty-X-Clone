@@ -31,6 +31,7 @@ fn main() {
 
 mod prelude {
     pub use crate::elements::appbar::{self, Appbar, AppbarImgButton};
+    // pub use crate::elements::post::PublicPostEntry;
     pub use crate::icon::*;
     pub use crate::page::*;
     pub use crate::util::api_client::fetch_json;

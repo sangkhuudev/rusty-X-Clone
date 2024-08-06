@@ -154,7 +154,7 @@ pub fn NewImage() -> Element {
 
         match response {
             Ok(_res) => {
-                info!("Post new chat successfully!");
+                info!("Post new image successfully!");
                 TOASTER
                     .write()
                     .success("Posted successfully", Duration::seconds(3));

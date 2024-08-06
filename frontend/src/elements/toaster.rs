@@ -26,8 +26,8 @@ pub struct Toast {
 
 #[derive(Default, Clone, Debug, PartialEq)]
 pub struct Toaster {
-    toasts: HashMap<usize, Toast>,
-    next_id: usize,
+    pub toasts: HashMap<usize, Toast>,
+    pub next_id: usize,
 }
 
 impl Toaster {
@@ -80,7 +80,8 @@ impl Toaster {
 
 #[component]
 pub fn ToastRoot() -> Element {
-    let toasters = TOASTER.read();
+    // let mut toasts_signal = use_signal(|| TOASTER.read().toasts.clone());
+    let toasters = &TOASTER.read();
     let ToastElements = toasters.iter().map(|(&id, toast)| {
         let toast_style = match toast.kind {
             ToastKind::Info => "bg-slate-200 border-slate-300",
@@ -99,16 +100,15 @@ pub fn ToastRoot() -> Element {
             }
         }
     });
-
-    let total_toasts = TOASTER.signal();
-
-    // use_future will run the future
+    
+    // A resource that tracks removal of expired toasts
     let _remove_ids = use_resource(move || async move {
         loop {
-            if total_toasts.read().toasts.len() == 0 {
+             // Break the loop if there are no toasts
+            if TOASTER.read().toasts.is_empty() {
                 break;
             }
-
+        
             let expired_ids = TOASTER
                 .read()
                 .iter()
@@ -122,17 +122,20 @@ pub fn ToastRoot() -> Element {
                 .collect::<Vec<usize>>();
             info!("The loop will be break after removing toasts ");
 
-            expired_ids
-                .iter()
-                .for_each(|&id| TOASTER.write().remove(id));
 
-            if total_toasts.read().toasts.len() == 0 {
-                break;
+            if !expired_ids.is_empty() {
+                for id in &expired_ids {
+                    TOASTER.write().remove(*id);
+                    info!("Removed expired toasts");
+                }
+
             }
 
-            gloo_timers::future::TimeoutFuture::new(200_u32).await
+            // Allow some time before the next check
+            gloo_timers::future::TimeoutFuture::new(600).await
         }
     });
+
 
     rsx! {
         div {

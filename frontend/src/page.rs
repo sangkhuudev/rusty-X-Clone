@@ -6,7 +6,7 @@ pub mod register;
 pub mod trending;
 
 pub use crate::elements::*;
-pub use home::Home;
+pub use home::{bookmarked::HomeBookmarked, liked::HomeLiked, Home};
 pub use login::Login;
 pub use new_post::*;
 pub use not_found::PageNotFound;
@@ -21,6 +21,12 @@ pub enum Route {
     #[layout(Navbar)]
         #[route("/home")]
         Home {},
+
+        #[route("/home/liked")]
+        HomeLiked {},
+
+        #[route("/home/bookmarked")]
+        HomeBookmarked {},
 
         #[route("/account/register")]
         Register {},

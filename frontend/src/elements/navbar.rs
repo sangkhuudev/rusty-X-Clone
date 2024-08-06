@@ -31,7 +31,7 @@ pub fn NewPostPopup(hide: Signal<bool>) -> Element {
                 },
                 img {
                     class: "invert",
-                    src: "{ICON_POLL}"
+                    src: ICON_POLL
                 }
                 "Poll"
             }
@@ -43,7 +43,7 @@ pub fn NewPostPopup(hide: Signal<bool>) -> Element {
                 },
                 img {
                     class: "invert",
-                    src: "{ICON_IMAGE}",
+                    src: ICON_IMAGE,
                 }
                 "Image"
             }
@@ -56,7 +56,7 @@ pub fn NewPostPopup(hide: Signal<bool>) -> Element {
                 },
                 img {
                     class: "invert",
-                    src: "{ICON_MESSAGES}",
+                    src: ICON_MESSAGES,
                 }
                 "Chat"
             }
@@ -91,7 +91,7 @@ pub fn NavButton(props: NavButtonProps) -> Element {
 #[component]
 pub fn Navbar() -> Element {
     let mut hide_new_post_popup = use_signal(|| true);
-
+    
     rsx!(
         nav {
             class: "max-w-[var(--content-max-width)] h-[var(--navbar-height)]
@@ -102,23 +102,23 @@ pub fn Navbar() -> Element {
                 full items-center shadow-inner",
 
                 NavButton {
-                    img: "{ICON_HOME}",
+                    img: ICON_HOME,
                     label: "Home",
                     onclick: move |_| {
-                        router().push(Route::Home {});
+                        router().replace(Route::Home {});
                     }
                 }
 
                 NavButton {
-                    img: "{ICON_TRENDING}",
+                    img: ICON_TRENDING,
                     label: "Trending",
                     onclick: move |_| {
-                        router().push(Route::Trending {});
+                        router().replace(Route::Trending {});
                     }
                 }
 
                 NavButton {
-                    img: "{ICON_POST}",
+                    img: ICON_POST,
                     label: "Post",
                     onclick: move |_| {
                         let is_hidden = *hide_new_post_popup.read();

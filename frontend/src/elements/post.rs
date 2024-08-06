@@ -51,6 +51,22 @@ impl PostManager {
     pub fn remove(&mut self, post_id: &PostId) {
         self.posts.shift_remove(post_id);
     }
+
+    pub fn all_to_public(&self) -> Vec<Option<VNode>> {
+        self
+            .posts
+            .iter()
+            .map(|(&id,_)| {
+                rsx!(
+                    div {
+                        PublicPostEntry {
+                            post_id: id
+                        }
+                    }
+                )
+            })
+            .collect()
+    }
 }
 
 #[component]
@@ -94,8 +110,13 @@ pub fn Header(post: PublicPost) -> Element {
 #[component]
 pub fn PublicPostEntry(post_id: PostId) -> Element {
     let post_manager = POSTMANAGER.read();
-    let this_post = post_manager.get(&post_id).unwrap();
-    // let this_post = POSTMANAGER.signal().read().get(&post_id).unwrap();
+    // let this_post = post_manager.get(&post_id).unwrap();
+    let this_post = match post_manager.get(&post_id) {
+        Some(post) => post,
+        None => {
+            return rsx!(div { "Post not found" });
+        }
+    };
 
     rsx!(
         div {

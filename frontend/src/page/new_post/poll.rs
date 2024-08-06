@@ -204,7 +204,7 @@ pub fn NewPoll() -> Element {
 
         match response {
             Ok(_res) => {
-                info!("Post new chat successfully!");
+                info!("Post new poll successfully!");
                 TOASTER
                     .write()
                     .success("Posted successfully", Duration::seconds(3));
