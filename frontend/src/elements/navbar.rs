@@ -91,7 +91,7 @@ pub fn NavButton(props: NavButtonProps) -> Element {
 #[component]
 pub fn Navbar() -> Element {
     let mut hide_new_post_popup = use_signal(|| true);
-    
+
     rsx!(
         nav {
             class: "max-w-[var(--content-max-width)] h-[var(--navbar-height)]

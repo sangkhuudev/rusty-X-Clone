@@ -13,7 +13,7 @@ pub fn Trending() -> Element {
     tracing::info!("Initializing Trending component.");
 
     // Fetch trending posts asynchronously
-    let mut fetch_posts = use_resource(move || async move {
+    let _fetch_posts = use_resource(move || async move {
         tracing::info!("Starting request to fetch trending posts.");
 
         // Define a timeout duration and start fetching data
@@ -38,8 +38,6 @@ pub fn Trending() -> Element {
 
     let post_manager = POSTMANAGER.read();
     let trending_posts = post_manager.all_to_public();
-    fetch_posts.clear();
 
     rsx!({ trending_posts.into_iter() })
-
 }

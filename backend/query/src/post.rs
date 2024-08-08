@@ -393,7 +393,6 @@ pub fn get_poll_results(
     }
 }
 
-
 pub fn get_home_posts(conn: &mut PgConnection, user_id: UserId) -> Result<Vec<Post>, DieselError> {
     let uid = user_id;
     let on_schedule = posts::time_posted.lt(Utc::now());
@@ -418,7 +417,7 @@ pub fn get_home_posts(conn: &mut PgConnection, user_id: UserId) -> Result<Vec<Po
                 .filter(public_only)
                 .select(Post::as_select())
                 .order(order)
-                .limit(limit)
+                .limit(limit),
         )
         .get_results(conn)
 }
@@ -434,7 +433,10 @@ pub fn get_liked_posts(conn: &mut PgConnection, user_id: UserId) -> Result<Vec<P
         .get_results(conn)
 }
 
-pub fn get_bookmarked_posts(conn: &mut PgConnection, user_id: UserId) -> Result<Vec<Post>, DieselError> {
+pub fn get_bookmarked_posts(
+    conn: &mut PgConnection,
+    user_id: UserId,
+) -> Result<Vec<Post>, DieselError> {
     bookmarks::table
         .inner_join(posts::table)
         .filter(bookmarks::user_id.eq(user_id))

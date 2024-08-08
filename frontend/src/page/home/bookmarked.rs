@@ -1,9 +1,9 @@
 #![allow(non_snake_case)]
 
-use chrono::Duration;
-use uchat_endpoint::post::endpoint::{BookmarkedPost, BookmarkedPostOk};
 use crate::prelude::*;
+use chrono::Duration;
 use dioxus::prelude::*;
+use uchat_endpoint::post::endpoint::{BookmarkedPost, BookmarkedPostOk};
 
 #[component]
 pub fn HomeBookmarked() -> Element {
@@ -13,7 +13,7 @@ pub fn HomeBookmarked() -> Element {
     tracing::info!("Initializing Home component.");
 
     // Fetch trending posts asynchronously
-    let mut fetch_posts = use_resource(move || async move {
+    let _fetch_posts = use_resource(move || async move {
         tracing::info!("Starting request to fetch trending posts.");
         // Define a timeout duration and start fetching data
         match fetch_json!(<BookmarkedPostOk>, api_client, BookmarkedPost) {
@@ -23,7 +23,6 @@ pub fn HomeBookmarked() -> Element {
                 TOASTER
                     .write()
                     .info("Retrieving home posts", Duration::milliseconds(600));
-
             }
             Err(err) => {
                 tracing::error!("Failed to fetch home posts: {:?}", err);

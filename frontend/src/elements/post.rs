@@ -53,10 +53,9 @@ impl PostManager {
     }
 
     pub fn all_to_public(&self) -> Vec<Option<VNode>> {
-        self
-            .posts
+        self.posts
             .iter()
-            .map(|(&id,_)| {
+            .map(|(&id, _)| {
                 rsx!(
                     div {
                         PublicPostEntry {

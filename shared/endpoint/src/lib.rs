@@ -3,7 +3,7 @@ use post::endpoint::{
     Bookmark, BookmarkedPost, Boost, HomePost, LikedPost, NewPost, React, TrendingPost, Vote,
 };
 use serde::{Deserialize, Serialize};
-use user::endpoint::{CreateUser, Login};
+use user::endpoint::{CreateUser, GetMyProfile, Login, UpdateProfile};
 
 pub mod post;
 pub mod user;
@@ -56,6 +56,7 @@ pub mod app_url {
 // public routes
 route!("/account/create" => CreateUser);
 route!("/account/login" => Login);
+// route!("/profile/view" => ViewProfile);
 
 // authorized routes
 route!("/post/new" => NewPost);
@@ -67,3 +68,30 @@ route!("/posts/trending" => TrendingPost);
 route!("/posts/home" => HomePost);
 route!("/posts/liked" => LikedPost);
 route!("/posts/bookmarked" => BookmarkedPost);
+route!("/profile/update" => UpdateProfile);
+route!("/profile/me" => GetMyProfile);
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Update<T> {
+    Change(T),
+    NoChange,
+    SetNull,
+}
+
+impl<T> Update<T> {
+    pub fn into_option(self) -> Option<T> {
+        match self {
+            Update::Change(data) => Some(data),
+            Update::NoChange => None,
+            Update::SetNull => None,
+        }
+    }
+
+    pub fn into_nullable(self) -> Option<Option<T>> {
+        match self {
+            Update::Change(data) => Some(Some(data)),
+            Update::NoChange => None,
+            Update::SetNull => Some(None),
+        }
+    }
+}

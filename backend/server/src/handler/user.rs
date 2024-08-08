@@ -3,19 +3,30 @@ use chrono::{Duration, Utc};
 use tracing::info;
 use uchat_crypto::{encode_base64, hash_password, password::deserialize_hash, verify_password};
 use uchat_domain::user::DisplayName;
-use uchat_endpoint::user::{
-    endpoint::{CreateUser, CreateUserOk, Login, LoginOk},
-    types::PublicUserProfile,
+use uchat_endpoint::{
+    user::{
+        endpoint::{
+            CreateUser, CreateUserOk, GetMyProfile, GetMyProfileOk, Login, LoginOk, UpdateProfile,
+            UpdateProfileOk,
+        },
+        types::PublicUserProfile,
+    },
+    Update,
 };
 use uchat_query::{
     session::{self, Session},
-    user::{get_hashed_password, User},
-    AsyncConnection, UserId,
+    user::{get_hashed_password, UpdateProfileParams, User},
+    AsyncConnection, ImageId, UserId,
+};
+use url::Url;
+
+use crate::{
+    error::ApiResult,
+    extractor::{DbConnection, UserSession},
+    AppState,
 };
 
-use crate::{error::ApiResult, extractor::DbConnection, AppState};
-
-use super::PublicApiRequest;
+use super::{save_image, AuthorizedApiRequest, PublicApiRequest};
 
 pub fn to_public(user: User) -> ApiResult<PublicUserProfile> {
     Ok(PublicUserProfile {
@@ -30,6 +41,14 @@ pub fn to_public(user: User) -> ApiResult<PublicUserProfile> {
     })
 }
 
+fn profile_id_to_url(id: &str) -> Url {
+    use uchat_endpoint::app_url::{self, user_content};
+    app_url::domain_and(user_content::ROOT)
+        .join(user_content::IMAGE)
+        .unwrap()
+        .join(id)
+        .unwrap()
+}
 #[derive(Debug, Clone)]
 pub struct SessionSignature(String);
 
@@ -117,6 +136,90 @@ impl PublicApiRequest for Login {
                 email: user.email,
                 profile_image: None,
                 user_id: user.id,
+            }),
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizedApiRequest for GetMyProfile {
+    type Response = (StatusCode, Json<GetMyProfileOk>);
+    #[tracing::instrument(
+        name = "Get my profile",
+        skip_all,
+        // fields(dislay_name = %self.dislay_name)
+    )]
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        let user = uchat_query::user::get(&mut conn, session.user_id)?;
+
+        tracing::info!("Getting profile...");
+        let profile_image_url = user.profile_image.as_ref().map(|id| profile_id_to_url(id));
+
+        tracing::info!("Profile got sent.");
+        Ok((
+            StatusCode::OK,
+            Json(GetMyProfileOk {
+                user_id: user.id,
+                display_name: user.display_name,
+                email: user.email,
+                profile_image: profile_image_url,
+            }),
+        ))
+    }
+}
+
+#[async_trait]
+impl AuthorizedApiRequest for UpdateProfile {
+    type Response = (StatusCode, Json<UpdateProfileOk>);
+    #[tracing::instrument(
+        name = "Update my profile",
+        skip_all,
+        // fields(dislay_name = %self.dislay_name)
+    )]
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        let user = uchat_query::user::get(&mut conn, session.user_id)?;
+
+        let password = {
+            if let Update::Change(ref password) = self.password {
+                Update::Change(uchat_crypto::hash_password(password)?)
+            } else {
+                Update::NoChange
+            }
+        };
+
+        if let Update::Change(ref img) = self.profile_image {
+            let id = ImageId::new();
+            save_image(id, img).await?;
+        }
+
+        let query_params = UpdateProfileParams {
+            id: session.user_id,
+            display_name: self.display_name,
+            email: self.email,
+            password_hash: password,
+            profile_image: self.profile_image.clone(),
+        };
+        tracing::info!("Updating my profile...");
+        uchat_query::user::update_profile(&mut conn, query_params)?;
+
+        let profile_image_url = user.profile_image.as_ref().map(|id| profile_id_to_url(id));
+
+        tracing::info!("Profile updated successfully");
+
+        Ok((
+            StatusCode::OK,
+            Json(UpdateProfileOk {
+                profile_image: profile_image_url,
             }),
         ))
     }

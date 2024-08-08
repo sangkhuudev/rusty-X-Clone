@@ -15,7 +15,7 @@ pub fn Home() -> Element {
     tracing::info!("Initializing Home component.");
 
     // Fetch trending posts asynchronously
-    let mut fetch_posts = use_resource(move || async move {
+    let _fetch_posts = use_resource(move || async move {
         tracing::info!("Starting request to fetch trending posts.");
         // Define a timeout duration and start fetching data
         match fetch_json!(<HomePostOk>, api_client, HomePost) {
@@ -39,55 +39,9 @@ pub fn Home() -> Element {
         }
     });
 
-    // match &*fetch_posts.read_unchecked() {
-    //     Some(Ok(_res)) => {
-    //         let post_manager = POSTMANAGER.read();
-    //         let Posts = post_manager.all_to_public();
-    //         rsx!(
-    //             Appbar {
-    //                 title: "Home",
-    //                 AppbarImgButton {
-    //                     click_handler: move |_| {
-    //                         router().push(Route::HomeLiked {});
-    //                     },
-    //                     img: ICON_LIKE,
-    //                     label: "Liked",
-    //                     title: "Show liked posts",
-    //                 },
-    //                 AppbarImgButton {
-    //                     click_handler: move |_| {
-    //                         router().push(Route::HomeBookmarked {});
-    //                     },
-    //                     img: ICON_BOOKMARK,
-    //                     label: "Saved",
-    //                     title: "Show bookmarked posts",
-    //                 },
-    //                 AppbarImgButton {
-    //                     click_handler: move |_| {},
-    //                     img: ICON_HOME,
-    //                     label: "Home",
-    //                     title: "Go to Home page",
-    //                     disabled: true,
-    //                     append_class: appbar::BUTTON_SELECTED,
-    //                 },
-    //             }
-    //             {Posts.into_iter()}
-    //         )
-    //     },
-    //     Some(Err(_)) => {
-    //         tracing::info!("Failed to load home posts");
-    //         rsx!(p {"Error when loading home post"})
-    //     },
-    //     None => {
-    //         tracing::info!("Loading home posts");
-    //         rsx!(p {"Loading home post..."})
-
-    //     }
-    // } 
-
     let post_manager = POSTMANAGER.read();
     let Posts = post_manager.all_to_public();
-    fetch_posts.clear();
+
     rsx!(
         Appbar {
             title: "Home",
