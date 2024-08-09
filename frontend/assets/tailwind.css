@@ -1,5 +1,5 @@
 /*
-! tailwindcss v3.4.8 | MIT License | https://tailwindcss.com
+! tailwindcss v3.4.9 | MIT License | https://tailwindcss.com
 */
 
 /*
@@ -617,6 +617,14 @@ video {
 .profile-portrait {
   height: 3.5rem;
   width: 3.5rem;
+  border-radius: 0.375rem;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+
+.profile-portrait-lg {
+  height: 7rem;
+  width: 7rem;
   border-radius: 0.375rem;
   -o-object-fit: cover;
      object-fit: cover;

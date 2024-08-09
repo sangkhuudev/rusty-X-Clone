@@ -4,6 +4,7 @@ pub mod new_post;
 pub mod not_found;
 pub mod register;
 pub mod trending;
+pub mod edit_profile;
 
 pub use crate::elements::*;
 pub use home::{bookmarked::HomeBookmarked, liked::HomeLiked, Home};
@@ -12,6 +13,7 @@ pub use new_post::*;
 pub use not_found::PageNotFound;
 pub use register::Register;
 pub use trending::Trending;
+pub use edit_profile::EditProfile;
 
 use dioxus::prelude::*;
 
@@ -46,6 +48,8 @@ pub enum Route {
         #[route("/posts/trending")]
         Trending {},
 
+        #[route("/profile/edit")]
+        EditProfile {},
     #[end_layout]
     #[route("/:..route")]
     PageNotFound {
