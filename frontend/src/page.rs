@@ -1,19 +1,19 @@
+pub mod edit_profile;
 pub mod home;
 pub mod login;
 pub mod new_post;
 pub mod not_found;
 pub mod register;
 pub mod trending;
-pub mod edit_profile;
 
 pub use crate::elements::*;
+pub use edit_profile::EditProfile;
 pub use home::{bookmarked::HomeBookmarked, liked::HomeLiked, Home};
 pub use login::Login;
 pub use new_post::*;
 pub use not_found::PageNotFound;
 pub use register::Register;
 pub use trending::Trending;
-pub use edit_profile::EditProfile;
 
 use dioxus::prelude::*;
 
