@@ -71,6 +71,7 @@ macro_rules! sync_handler {
     ([$($cap:ident),*], move |$($args:tt : $types:ty),*| $body:expr) => {
         move |$($args: $types),*| {
             $(
+                #[allow(unused_mut)]
                 let mut $cap = $cap;
             )*
             $body
@@ -79,6 +80,7 @@ macro_rules! sync_handler {
     ([$($cap:ident),*], move |$($args:tt),*| $body:expr) => {
         move |$($args),*| {
             $(
+                #[allow(unused_mut)]
                 let mut $cap = $cap;
             )*
             $body

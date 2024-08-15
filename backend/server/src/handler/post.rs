@@ -2,23 +2,14 @@ use crate::handler::save_image;
 use anyhow::anyhow;
 use axum::{async_trait, http::StatusCode, Json};
 use chrono::Utc;
-use uchat_domain::Username;
+use diesel_async::AsyncPgConnection;
+use uchat_domain::{ImageId, Username};
 use uchat_endpoint::{
-    app_url::{self, user_content},
-    post::{
-        endpoint::{
-            Bookmark, BookmarkOk, BookmarkedPost, BookmarkedPostOk, Boost, BoostOk, HomePost,
-            HomePostOk, LikedPost, LikedPostOk, NewPost, NewPostOk, React, ReactOk, TrendingPost,
-            TrendingPostOk, Vote, VoteOk,
-        },
-        types::{BookmarkAction, BoostAction, Content, ImageKind, LikeStatus, PublicPost},
-    },
+    app_url::construct_image_url,
+    post::{endpoint::*, types::*},
     RequestFailed,
 };
-use uchat_query::{
-    post::{did_vote, Post, Reaction},
-    AsyncConnection, ImageId,
-};
+use uchat_query::post::{did_vote, Post, Reaction};
 
 use crate::{
     error::{ApiError, ApiResult},
@@ -28,8 +19,16 @@ use crate::{
 
 use super::AuthorizedApiRequest;
 
-pub fn to_public(
-    conn: &mut AsyncConnection,
+#[tracing::instrument(
+    name = "Make the post public",
+    skip(conn, session),
+    fields(
+        user_id = ?post.user_id,
+        content = ?post.content
+    )
+)]
+pub async fn to_public(
+    conn: &mut AsyncPgConnection,
     post: Post,
     session: Option<&UserSession>,
 ) -> ApiResult<PublicPost> {
@@ -37,16 +36,19 @@ pub fn to_public(
         match content {
             Content::Image(ref mut img) => {
                 if let ImageKind::Id(id) = img.kind {
-                    let url = app_url::domain_and(user_content::ROOT)
-                        .join(user_content::IMAGE)
-                        .unwrap()
-                        .join(&id.to_string())
-                        .unwrap();
+                    tracing::debug!("Change the kind of image from ImageKind::Id)");
+
+                    let url = construct_image_url(&id.to_string()).unwrap();
+                    tracing::info!("Image url: {}", url);
+                    tracing::debug!("Kind of image: ImageKind::Url(url)");
                     img.kind = ImageKind::Url(url);
                 }
             }
             Content::Poll(ref mut poll) => {
-                for (id, result) in uchat_query::post::get_poll_results(conn, post.id)?.results {
+                for (id, result) in uchat_query::post::get_poll_results(conn, post.id)
+                    .await?
+                    .results
+                {
                     for choice in poll.choices.iter_mut() {
                         if choice.id == id {
                             choice.num_votes = result;
@@ -55,17 +57,17 @@ pub fn to_public(
                     }
                 }
                 if let Some(session) = session {
-                    poll.voted = did_vote(conn, session.user_id, post.id)?;
+                    poll.voted = did_vote(conn, session.user_id, post.id).await?;
                 }
             }
             _ => {}
         }
-        let aggregate_reactions = uchat_query::post::aggregate_reactions(conn, post.id)?;
+        let aggregate_reactions = uchat_query::post::aggregate_reactions(conn, post.id).await?;
 
         Ok(PublicPost {
             id: post.id,
             by_user: {
-                let profile = uchat_query::user::get(conn, post.user_id)?;
+                let profile = uchat_query::user::get(conn, post.user_id).await?;
                 super::user::to_public(profile)?
             },
             content,
@@ -73,8 +75,9 @@ pub fn to_public(
             reply_to: {
                 match post.reply_to {
                     Some(other_post_id) => {
-                        let original_post = uchat_query::post::get(conn, other_post_id)?;
-                        let original_user = uchat_query::user::get(conn, original_post.user_id)?;
+                        let original_post = uchat_query::post::get(conn, other_post_id).await?;
+                        let original_user =
+                            uchat_query::user::get(conn, original_post.user_id).await?;
                         Some((
                             Username::try_new(original_user.handle).unwrap(),
                             original_user.id,
@@ -88,7 +91,9 @@ pub fn to_public(
             like_status: {
                 match session {
                     Some(session) => {
-                        match uchat_query::post::get_reaction(conn, post.id, session.user_id)? {
+                        match uchat_query::post::get_reaction(conn, post.id, session.user_id)
+                            .await?
+                        {
                             Some(reaction) if reaction.like_status == 1 => LikeStatus::Like,
                             Some(reaction) if reaction.like_status == -1 => LikeStatus::Dislike,
                             _ => LikeStatus::NoReaction,
@@ -101,14 +106,16 @@ pub fn to_public(
             bookmarked: {
                 match session {
                     Some(session) => {
-                        uchat_query::post::get_bookmark(conn, session.user_id, post.id)?
+                        uchat_query::post::get_bookmark(conn, session.user_id, post.id).await?
                     }
                     None => false,
                 }
             },
             boosted: {
                 match session {
-                    Some(session) => uchat_query::post::get_boost(conn, session.user_id, post.id)?,
+                    Some(session) => {
+                        uchat_query::post::get_boost(conn, session.user_id, post.id).await?
+                    }
                     None => false,
                 }
             },
@@ -146,7 +153,7 @@ impl AuthorizedApiRequest for NewPost {
             }
         }
         let post = Post::new(session.user_id, content, self.options)?;
-        let post_id = uchat_query::post::new(&mut conn, post)?;
+        let post_id = uchat_query::post::new(&mut conn, post).await?;
         tracing::info!(post_id = ?post_id, "New post created successfully");
 
         Ok((StatusCode::OK, Json(NewPostOk { post_id })))
@@ -169,9 +176,9 @@ impl AuthorizedApiRequest for TrendingPost {
         _state: AppState,
     ) -> ApiResult<Self::Response> {
         let mut posts = vec![];
-        for post in uchat_query::post::get_trending(&mut conn)? {
+        for post in uchat_query::post::get_trending(&mut conn).await? {
             let post_id = post.id;
-            match to_public(&mut conn, post, Some(&session)) {
+            match to_public(&mut conn, post, Some(&session)).await {
                 Ok(post) => posts.push(post),
                 Err(e) => {
                     tracing::error!(error = %e.error, post_id = ?post_id, "Post contains invalid data");
@@ -202,11 +209,12 @@ impl AuthorizedApiRequest for Bookmark {
     ) -> ApiResult<Self::Response> {
         match self.action {
             BookmarkAction::Add => {
-                uchat_query::post::bookmark(&mut conn, session.user_id, self.post_id)?;
+                uchat_query::post::bookmark(&mut conn, session.user_id, self.post_id).await?;
             }
 
             BookmarkAction::Remove => {
-                uchat_query::post::delete_bookmark(&mut conn, session.user_id, self.post_id)?;
+                uchat_query::post::delete_bookmark(&mut conn, session.user_id, self.post_id)
+                    .await?;
             }
         }
 
@@ -240,11 +248,12 @@ impl AuthorizedApiRequest for Boost {
     ) -> ApiResult<Self::Response> {
         match self.action {
             BoostAction::Add => {
-                uchat_query::post::boost(&mut conn, session.user_id, self.post_id, Utc::now())?;
+                uchat_query::post::boost(&mut conn, session.user_id, self.post_id, Utc::now())
+                    .await?;
             }
 
             BoostAction::Remove => {
-                uchat_query::post::delete_boost(&mut conn, session.user_id, self.post_id)?;
+                uchat_query::post::delete_boost(&mut conn, session.user_id, self.post_id).await?;
             }
         }
 
@@ -289,10 +298,11 @@ impl AuthorizedApiRequest for React {
         };
 
         tracing::info!("Querying data from reactions");
-        uchat_query::post::react(&mut conn, reaction)?;
+        uchat_query::post::react(&mut conn, reaction).await?;
 
         tracing::info!("Like status has been updated");
-        let aggregate_reactions = uchat_query::post::aggregate_reactions(&mut conn, self.post_id)?;
+        let aggregate_reactions =
+            uchat_query::post::aggregate_reactions(&mut conn, self.post_id).await?;
 
         Ok((
             StatusCode::OK,
@@ -324,7 +334,8 @@ impl AuthorizedApiRequest for Vote {
         _state: AppState,
     ) -> ApiResult<Self::Response> {
         let cast =
-            uchat_query::post::vote(&mut conn, session.user_id, self.post_id, self.choice_id)?;
+            uchat_query::post::vote(&mut conn, session.user_id, self.post_id, self.choice_id)
+                .await?;
 
         tracing::info!("Cast a vote successfully");
         Ok((StatusCode::OK, Json(VoteOk { cast })))
@@ -343,9 +354,9 @@ impl AuthorizedApiRequest for HomePost {
         _state: AppState,
     ) -> ApiResult<Self::Response> {
         let mut posts = vec![];
-        for post in uchat_query::post::get_home_posts(&mut conn, session.user_id)? {
+        for post in uchat_query::post::get_home_posts(&mut conn, session.user_id).await? {
             let post_id = post.id;
-            match to_public(&mut conn, post, Some(&session)) {
+            match to_public(&mut conn, post, Some(&session)).await {
                 Ok(post) => posts.push(post),
                 Err(e) => {
                     tracing::error!(error = %e.error, post_id = ?post_id, "Post contains invalid data");
@@ -368,9 +379,9 @@ impl AuthorizedApiRequest for LikedPost {
         _state: AppState,
     ) -> ApiResult<Self::Response> {
         let mut posts = vec![];
-        for post in uchat_query::post::get_liked_posts(&mut conn, session.user_id)? {
+        for post in uchat_query::post::get_liked_posts(&mut conn, session.user_id).await? {
             let post_id = post.id;
-            match to_public(&mut conn, post, Some(&session)) {
+            match to_public(&mut conn, post, Some(&session)).await {
                 Ok(post) => posts.push(post),
                 Err(e) => {
                     tracing::error!(error = %e.error, post_id = ?post_id, "Post contains invalid data");
@@ -393,9 +404,9 @@ impl AuthorizedApiRequest for BookmarkedPost {
         _state: AppState,
     ) -> ApiResult<Self::Response> {
         let mut posts = vec![];
-        for post in uchat_query::post::get_bookmarked_posts(&mut conn, session.user_id)? {
+        for post in uchat_query::post::get_bookmarked_posts(&mut conn, session.user_id).await? {
             let post_id = post.id;
-            match to_public(&mut conn, post, Some(&session)) {
+            match to_public(&mut conn, post, Some(&session)).await {
                 Ok(post) => posts.push(post),
                 Err(e) => {
                     tracing::error!(error = %e.error, post_id = ?post_id, "Post contains invalid data");

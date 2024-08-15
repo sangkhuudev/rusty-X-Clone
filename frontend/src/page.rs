@@ -1,10 +1,11 @@
-pub mod edit_profile;
-pub mod home;
-pub mod login;
-pub mod new_post;
-pub mod not_found;
-pub mod register;
-pub mod trending;
+mod edit_profile;
+mod home;
+mod login;
+mod new_post;
+mod not_found;
+mod register;
+mod trending;
+mod view_profile;
 
 pub use crate::elements::*;
 pub use edit_profile::EditProfile;
@@ -14,6 +15,7 @@ pub use new_post::*;
 pub use not_found::PageNotFound;
 pub use register::Register;
 pub use trending::Trending;
+pub use view_profile::ViewProfile;
 
 use dioxus::prelude::*;
 
@@ -50,6 +52,11 @@ pub enum Route {
 
         #[route("/profile/edit")]
         EditProfile {},
+
+        #[route("/profile/view/:user_id")]
+        ViewProfile {
+            user_id: String,
+        },
     #[end_layout]
     #[route("/:..route")]
     PageNotFound {

@@ -9,7 +9,10 @@ edition = "2021"
 
 [dependencies]
 bb8 = "0.8.5"
-bb8-diesel = { git = "https://github.com/overdrivenpotato/bb8-diesel.git" }
+diesel-async = { version = "0.5.0", features = ["postgres","deadpool"] }
+# bb8-diesel = { git = "https://github.com/overdrivenpotato/bb8-diesel.git" }
+# async-bb8-diesel = "0.2"
+deadpool-diesel = { version = "0.6.1", features = ["postgres"] }
 chrono = { version = "0.4.23", features = ["serde"] }
 diesel-derive-newtype = "2.0.0"
 diesel_migrations = { version = "2.0.0", features = ["postgres"] }
@@ -34,7 +37,7 @@ features = [
     "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
     "postgres_backend",
 ]
-version = "2.0.3"
+version = "2.2.0"
 default-features = false
 
 [dev-dependencies]

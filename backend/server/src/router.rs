@@ -17,24 +17,26 @@ use uchat_endpoint::{
     post::endpoint::{
         Bookmark, BookmarkedPost, Boost, HomePost, LikedPost, NewPost, React, TrendingPost, Vote,
     },
-    user::endpoint::{CreateUser, GetMyProfile, Login, UpdateProfile},
+    user::endpoint::{CreateUser, GetMyProfile, Login, UpdateProfile, ViewProfile},
     Endpoint,
 };
+
+use once_cell::sync::Lazy;
+use uchat_endpoint::app_url::user_content;
 
 use crate::{
     handler::{load_image, with_handler, with_public_handler},
     AppState,
 };
 
-pub async fn new_router(state: AppState) -> Router {
-    let image_url = {
-        use uchat_endpoint::app_url::user_content;
-        format!("{}{}", user_content::ROOT, user_content::IMAGE)
-    };
+// Define a static Lazy variable to cache the image_url
+static IMAGE_URL: Lazy<String> =
+    Lazy::new(|| format!("{}{}", user_content::ROOT, user_content::IMAGE));
 
+pub async fn new_router(state: AppState) -> Router {
     let public_router = Router::new()
         .route("/", get(move || async { "This is a route page" }))
-        .route(&format!("/{}:id", image_url), get(load_image))
+        .route(&format!("/{}:id", *IMAGE_URL), get(load_image))
         .route(CreateUser::URL, post(with_public_handler::<CreateUser>))
         .route(Login::URL, post(with_public_handler::<Login>));
 
@@ -47,6 +49,7 @@ pub async fn new_router(state: AppState) -> Router {
         .route(TrendingPost::URL, post(with_handler::<TrendingPost>))
         .route(GetMyProfile::URL, post(with_handler::<GetMyProfile>))
         .route(UpdateProfile::URL, post(with_handler::<UpdateProfile>))
+        .route(ViewProfile::URL, post(with_handler::<ViewProfile>))
         .route(HomePost::URL, post(with_handler::<HomePost>))
         .route(LikedPost::URL, post(with_handler::<LikedPost>))
         .route(BookmarkedPost::URL, post(with_handler::<BookmarkedPost>))

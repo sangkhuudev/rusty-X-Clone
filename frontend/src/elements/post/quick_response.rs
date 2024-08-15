@@ -86,6 +86,8 @@ pub fn QuickResponse(post_id: PostId, opened: Signal<bool>) -> Element {
     rsx!(
         form {
             onsubmit: form_onsubmit,
+            prevent_default: "onsubmit",
+
             // message
             MessageInput {
                 message: message,

@@ -1,8 +1,10 @@
 use anyhow::Result;
 use axum::extract::FromRef;
+use diesel_async::pooled_connection::deadpool::Object;
+use diesel_async::AsyncPgConnection;
 use rand::rngs::StdRng;
 use uchat_crypto::sign::Keys;
-use uchat_query::{AsyncConnection, AsyncConnectionPool, QueryError};
+use uchat_query::{AsyncConnectionPool, QueryError};
 
 pub mod error;
 pub mod extractor;
@@ -17,7 +19,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn connect(&self) -> Result<AsyncConnection, QueryError> {
+    pub async fn connect(&self) -> Result<Object<AsyncPgConnection>, QueryError> {
         self.db_pool.get().await
     }
 }

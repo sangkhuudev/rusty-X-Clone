@@ -2,17 +2,18 @@
 
 use crate::prelude::post::actionbar::Actionbar;
 use crate::prelude::post::content::Content;
+use crate::prelude::Route::ViewProfile;
 use crate::prelude::*;
 use dioxus::prelude::*;
 use indexmap::IndexMap;
 use uchat_domain::PostId;
 use uchat_endpoint::post::types::PublicPost;
 
-pub mod actionbar;
-pub mod content;
-pub mod quick_response;
+mod actionbar;
+mod content;
+mod quick_response;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct PostManager {
     pub posts: IndexMap<PostId, PublicPost>,
 }
@@ -67,6 +68,28 @@ impl PostManager {
             .collect()
     }
 }
+#[component]
+pub fn ProfileImage(post: PublicPost) -> Element {
+    let poster_info = &post.by_user;
+
+    let profile_img_src = &poster_info
+        .profile_image
+        .as_ref()
+        .map(|url| url.as_str())
+        .unwrap_or_else(|| "");
+
+    rsx!(
+        div {
+            img {
+                class: "profile-portrait cursor-pointer",
+                onclick: move |_| {
+                    router().push(ViewProfile { user_id: post.by_user.id.to_string()});
+                },
+                src: "{profile_img_src}",
+            }
+        }
+    )
+}
 
 #[component]
 pub fn Header(post: PublicPost) -> Element {
@@ -76,7 +99,7 @@ pub fn Header(post: PublicPost) -> Element {
         (date, time)
     };
 
-    let display_name = match &post.by_user.dislay_name {
+    let display_name = match &post.by_user.display_name {
         Some(name) => name.as_ref(),
         None => "",
     };
@@ -109,29 +132,28 @@ pub fn Header(post: PublicPost) -> Element {
 #[component]
 pub fn PublicPostEntry(post_id: PostId) -> Element {
     let post_manager = POSTMANAGER.read();
-    // let this_post = post_manager.get(&post_id).unwrap();
-    let this_post = match post_manager.get(&post_id) {
-        Some(post) => post,
-        None => {
-            return rsx!(div { "Post not found" });
-        }
+    let post = post_manager.get(&post_id);
+    let this_post = match post {
+        Some(post) => use_signal(|| post.clone()),
+        None => return rsx!(div {"Post not found"}),
     };
+    // let this_post = use_signal(|| post);
 
     rsx!(
         div {
-            key: "{this_post.id.to_string()}",
+            key: "{this_post.read().id.to_string()}",
             class: "grid grid-cols-[50px_1fr] gap-2 mb-4",
-            div { /*profile image */},
+            ProfileImage { post: this_post.read().clone()}
             div {
                 class: "flex flex-col gap-3",
                 // header
-                Header { post: this_post.clone()},
+                Header { post: this_post.read().clone()},
                 // reply to
                 // content
-                Content { post: this_post.clone()},
+                Content { post: this_post.read().clone()},
                 // action bar
                 Actionbar {
-                    post_id: this_post.id
+                    post_id: this_post.read().id
                 }
                 hr {}
             }

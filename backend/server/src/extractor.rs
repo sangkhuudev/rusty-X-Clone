@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use crate::AppState;
 use axum::{
     async_trait,
     extract::FromRequestParts,
@@ -7,12 +8,11 @@ use axum::{
     Extension, Json, RequestPartsExt,
 };
 use chrono::Utc;
+use diesel_async::{pooled_connection::deadpool::Object, AsyncPgConnection};
 use uchat_endpoint::RequestFailed;
-use uchat_query::{OwnedAsyncConnection, SessionId, UserId};
+use uchat_query::{SessionId, UserId};
 
-use crate::AppState;
-
-pub struct DbConnection(pub OwnedAsyncConnection);
+pub struct DbConnection(pub Object<AsyncPgConnection>);
 
 #[async_trait]
 impl<S> FromRequestParts<S> for DbConnection
@@ -21,8 +21,11 @@ where
 {
     type Rejection = (StatusCode, &'static str);
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let Extension(state) = parts.extract::<Extension<AppState>>().await.unwrap();
-        let conn = state.db_pool.get_owned().await.map_err(|_| {
+        let Extension(state) = parts
+            .extract::<Extension<AppState>>()
+            .await
+            .expect("Failed to extract AppState");
+        let conn = state.db_pool.get().await.map_err(|_| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Failed to connect to database",
@@ -118,6 +121,7 @@ where
                     })?;
 
                 let session = uchat_query::session::get(&mut conn, session_id)
+                    .await
                     .map_err(|err| {
                         tracing::debug!("Failed to retrieve session: {:?}", err);
                         unauthorized()

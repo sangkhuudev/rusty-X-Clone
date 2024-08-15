@@ -132,13 +132,13 @@ pub fn NewChat() -> Element {
                 info!("Post new chat successfully!");
                 TOASTER
                     .write()
-                    .success("Posted successfully", Duration::seconds(3));
+                    .success("Posted successfully", Duration::milliseconds(600));
                 router.replace(Route::Home {});
             }
             Err(e) => {
                 TOASTER
                     .write()
-                    .error(format!("Posted failed: {e}"), Duration::seconds(3));
+                    .error(format!("Posted failed: {e}"), Duration::milliseconds(600));
             }
         }
     });

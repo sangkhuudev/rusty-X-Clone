@@ -19,14 +19,12 @@ pub fn Home() -> Element {
         tracing::info!("Starting request to fetch trending posts.");
         // Define a timeout duration and start fetching data
         match fetch_json!(<HomePostOk>, api_client, HomePost) {
-            Ok(data) => {
+            Ok(res) => {
                 tracing::info!("Successfully retrieved home posts.");
-                POSTMANAGER.write().populate(data.posts.clone().into_iter());
+                POSTMANAGER.write().populate(res.posts.into_iter());
                 TOASTER
                     .write()
                     .info("Retrieving home posts", Duration::milliseconds(600));
-
-                // Ok(data)
             }
             Err(err) => {
                 tracing::error!("Failed to fetch home posts: {:?}", err);
@@ -34,7 +32,6 @@ pub fn Home() -> Element {
                     format!("Failed to retrieve posts : {err}"),
                     Duration::milliseconds(600),
                 );
-                // Err(err)
             }
         }
     });

@@ -121,7 +121,7 @@ pub fn Register() -> Element {
     rsx! {
         form {
             class: "flex flex-col gap-5",
-            // prevent_default: "onsubmit",
+            prevent_default: "onsubmit",
             onsubmit: form_onsubmit,
 
             // Username input component

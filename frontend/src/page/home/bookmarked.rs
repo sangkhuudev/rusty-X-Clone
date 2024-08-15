@@ -14,7 +14,6 @@ pub fn HomeBookmarked() -> Element {
 
     // Fetch trending posts asynchronously
     let _fetch_posts = use_resource(move || async move {
-        tracing::info!("Starting request to fetch trending posts.");
         // Define a timeout duration and start fetching data
         match fetch_json!(<BookmarkedPostOk>, api_client, BookmarkedPost) {
             Ok(data) => {

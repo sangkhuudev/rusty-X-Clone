@@ -1,5 +1,6 @@
 use chrono::{DateTime, Duration, Utc};
 use diesel::prelude::*;
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uchat_domain::{SessionId, UserId};
@@ -26,8 +27,8 @@ pub struct Session {
     pub fingerprint: FingerPrint,
 }
 
-pub fn new(
-    conn: &mut PgConnection,
+pub async fn new(
+    conn: &mut AsyncPgConnection,
     user_id: UserId,
     duration: Duration,
     fingerprint: FingerPrint,
@@ -46,32 +47,26 @@ pub fn new(
         .do_update()
         .set(web::expires_at.eq(new_session.expires_at))
         .get_result::<Session>(conn)
+        .await
 }
 
-pub fn get(conn: &mut PgConnection, session_id: SessionId) -> Result<Option<Session>, DieselError> {
+pub async fn get(
+    conn: &mut AsyncPgConnection,
+    session_id: SessionId,
+) -> Result<Option<Session>, DieselError> {
     tracing::debug!("Retrieving session with ID: {:?}", session_id);
 
     let session = web::table
         .filter(web::id.eq(session_id))
         .get_result::<Session>(conn)
+        .await
         .optional()?;
-
-    if let Some(ref s) = session {
-        if s.expires_at < Utc::now() {
-            tracing::debug!("Session has expired.");
-            return Ok(None);
-        } else {
-            tracing::debug!("Session is valid. Expires at: {:?}", s.expires_at);
-        }
-    } else {
-        tracing::debug!("Session not found.");
-    }
 
     Ok(session)
 }
 
-pub fn find(
-    conn: &mut PgConnection,
+pub async fn find(
+    conn: &mut AsyncPgConnection,
     user_id: UserId,
     fingerprint: FingerPrint,
 ) -> Result<Session, DieselError> {
@@ -79,4 +74,5 @@ pub fn find(
         .filter(web::user_id.eq(user_id))
         .filter(web::fingerprint.eq(fingerprint))
         .get_result(conn)
+        .await
 }

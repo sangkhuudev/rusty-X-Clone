@@ -3,6 +3,8 @@ use crate::DieselError;
 use chrono::DateTime;
 use chrono::Utc;
 use diesel::prelude::*;
+use diesel_async::scoped_futures::ScopedFutureExt;
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 use uchat_domain::PollChoiceId;
 use uchat_domain::{PostId, UserId};
@@ -46,38 +48,47 @@ impl Post {
 
 //------------------------------------------------------------------------------
 
-pub fn new(conn: &mut PgConnection, post: Post) -> Result<PostId, DieselError> {
-    conn.transaction::<PostId, DieselError, _>(|conn| {
-        diesel::insert_into(posts::table)
-            .values(&post)
-            .execute(conn)?;
+pub async fn new(conn: &mut AsyncPgConnection, post: Post) -> Result<PostId, DieselError> {
+    use diesel_async::AsyncConnection;
 
-        match serde_json::from_value::<EndpointContent>(post.content.0) {
-            Ok(EndpointContent::Poll(poll)) => {
-                for choice in &poll.choices {
-                    use poll_choices::{self, columns};
-                    diesel::insert_into(poll_choices::table)
-                        .values((
-                            columns::post_id.eq(post.id),
-                            columns::id.eq(choice.id),
-                            columns::choice.eq(choice.description.as_ref()),
-                        ))
-                        .execute(conn)?;
+    conn.transaction::<PostId, DieselError, _>(|conn| {
+        async move {
+            diesel::insert_into(posts::table)
+                .values(&post)
+                .execute(conn)
+                .await?;
+
+            match serde_json::from_value::<EndpointContent>(post.content.0) {
+                Ok(EndpointContent::Poll(poll)) => {
+                    for choice in &poll.choices {
+                        use poll_choices::{self, columns};
+                        diesel::insert_into(poll_choices::table)
+                            .values((
+                                columns::post_id.eq(post.id),
+                                columns::id.eq(choice.id),
+                                columns::choice.eq(choice.description.as_ref()),
+                            ))
+                            .execute(conn)
+                            .await?;
+                    }
+                    Ok(post.id)
                 }
-                Ok(post.id)
+                _ => Ok(post.id),
             }
-            _ => Ok(post.id),
         }
+        .scope_boxed()
     })
+    .await
 }
 
-pub fn get(conn: &mut PgConnection, post_id: PostId) -> Result<Post, DieselError> {
+pub async fn get(conn: &mut AsyncPgConnection, post_id: PostId) -> Result<Post, DieselError> {
     posts::table
         .filter(posts::columns::id.eq(post_id.as_uuid()))
         .get_result(conn)
+        .await
 }
 
-pub fn get_trending(conn: &mut PgConnection) -> Result<Vec<Post>, DieselError> {
+pub async fn get_trending(conn: &mut AsyncPgConnection) -> Result<Vec<Post>, DieselError> {
     use crate::schema::posts::dsl::*;
     posts
         .filter(time_posted.lt(Utc::now()))
@@ -85,26 +96,47 @@ pub fn get_trending(conn: &mut PgConnection) -> Result<Vec<Post>, DieselError> {
         .order(time_posted.desc())
         .limit(30)
         .get_results(conn)
+        .await
+}
+
+pub async fn get_public_posts(
+    conn: &mut AsyncPgConnection,
+    user_id: UserId,
+) -> Result<Vec<Post>, DieselError> {
+    let uid = user_id;
+
+    {
+        use crate::schema::posts::dsl::*;
+        posts
+            .filter(user_id.eq(uid))
+            .filter(time_posted.lt(Utc::now()))
+            .filter(direct_message_to.is_null())
+            .order(time_posted.desc())
+            .limit(30)
+            .get_results(conn)
+            .await
+    }
 }
 
 //------------------------------------------------------------------------------
-pub fn bookmark(
-    conn: &mut PgConnection,
+pub async fn bookmark(
+    conn: &mut AsyncPgConnection,
     user_id: UserId,
     post_id: PostId,
 ) -> Result<(), DieselError> {
     // Change names of user_id and post_id because we dont want to mess with database.
     let uid = user_id;
     let pid = post_id;
-    conn.transaction::<(), DieselError, _>(|conn| {
+    {
         use crate::schema::bookmarks::dsl::*;
         diesel::insert_into(bookmarks)
             .values((user_id.eq(uid), post_id.eq(pid)))
             .on_conflict((user_id, post_id))
             .do_nothing()
-            .execute(conn)?;
-        Ok(())
-    })
+            .execute(conn)
+            .await
+            .map(|_| ())
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -113,20 +145,20 @@ pub enum DeleteStatus {
     NotFound,
 }
 
-pub fn delete_bookmark(
-    conn: &mut PgConnection,
+pub async fn delete_bookmark(
+    conn: &mut AsyncPgConnection,
     user_id: UserId,
     post_id: PostId,
 ) -> Result<DeleteStatus, DieselError> {
-    // Change names of user_id and post_id because we dont want to mess with database.
     let uid = user_id;
     let pid = post_id;
-    conn.transaction::<DeleteStatus, DieselError, _>(|conn| {
+    {
         use crate::schema::bookmarks::dsl::*;
         diesel::delete(bookmarks)
-            .filter(user_id.eq(uid))
             .filter(post_id.eq(pid))
+            .filter(user_id.eq(uid))
             .execute(conn)
+            .await
             .map(|rowcount| {
                 if rowcount > 0 {
                     DeleteStatus::Deleted
@@ -134,11 +166,11 @@ pub fn delete_bookmark(
                     DeleteStatus::NotFound
                 }
             })
-    })
+    }
 }
 
-pub fn get_bookmark(
-    conn: &mut PgConnection,
+pub async fn get_bookmark(
+    conn: &mut AsyncPgConnection,
     user_id: UserId,
     post_id: PostId,
 ) -> Result<bool, DieselError> {
@@ -153,6 +185,7 @@ pub fn get_bookmark(
             .filter(user_id.eq(uid))
             .select(count(post_id))
             .get_result(conn)
+            .await
             .optional()
             .map(|n: Option<i64>| match n {
                 Some(n) => n == 1,
@@ -175,7 +208,7 @@ pub struct Reaction {
     pub reaction: Option<ReactionData>,
 }
 
-pub fn react(conn: &mut PgConnection, reaction: Reaction) -> Result<(), DieselError> {
+pub async fn react(conn: &mut AsyncPgConnection, reaction: Reaction) -> Result<(), DieselError> {
     diesel::insert_into(reactions::table)
         .values(&reaction)
         .on_conflict((reactions::user_id, reactions::post_id))
@@ -185,11 +218,12 @@ pub fn react(conn: &mut PgConnection, reaction: Reaction) -> Result<(), DieselEr
             reactions::reaction.eq(&reaction.reaction),
         ))
         .execute(conn)
+        .await
         .map(|_| ())
 }
 
-pub fn get_reaction(
-    conn: &mut PgConnection,
+pub async fn get_reaction(
+    conn: &mut AsyncPgConnection,
     post_id: PostId,
     user_id: UserId,
 ) -> Result<Option<Reaction>, DieselError> {
@@ -202,6 +236,7 @@ pub fn get_reaction(
             .filter(post_id.eq(pid))
             .filter(user_id.eq(uid))
             .get_result(conn)
+            .await
             .optional()
     }
 }
@@ -216,8 +251,8 @@ pub struct AggregatePostInfo {
     pub boosts: i64,
 }
 
-pub fn aggregate_reactions(
-    conn: &mut PgConnection,
+pub async fn aggregate_reactions(
+    conn: &mut AsyncPgConnection,
     post_id: PostId,
 ) -> Result<AggregatePostInfo, DieselError> {
     let pid = post_id;
@@ -227,19 +262,26 @@ pub fn aggregate_reactions(
             .filter(post_id.eq(pid))
             .filter(like_status.eq(1))
             .count()
-            .get_result(conn)?;
+            .get_result(conn)
+            .await?;
 
         let dislikes = reactions
             .filter(post_id.eq(pid))
             .filter(like_status.eq(-1))
             .count()
-            .get_result(conn)?;
+            .get_result(conn)
+            .await?;
+
         (likes, dislikes)
     };
 
     let boosts = {
         use crate::schema::boosts::dsl::*;
-        boosts.filter(post_id.eq(pid)).count().get_result(conn)?
+        boosts
+            .filter(post_id.eq(pid))
+            .count()
+            .get_result(conn)
+            .await?
     };
 
     Ok(AggregatePostInfo {
@@ -251,8 +293,8 @@ pub fn aggregate_reactions(
 }
 
 //------------------------------------------------------------------------------
-pub fn boost(
-    conn: &mut PgConnection,
+pub async fn boost(
+    conn: &mut AsyncPgConnection,
     user_id: UserId,
     post_id: PostId,
     when: DateTime<Utc>,
@@ -260,32 +302,34 @@ pub fn boost(
     // Change names of user_id and post_id because we dont want to mess with database.
     let uid = user_id;
     let pid = post_id;
-    conn.transaction::<(), DieselError, _>(|conn| {
+    {
         use crate::schema::boosts::dsl::*;
         diesel::insert_into(boosts)
             .values((user_id.eq(uid), post_id.eq(pid), boosted_at.eq(when)))
             .on_conflict((user_id, post_id))
             .do_update()
             .set(boosted_at.eq(when))
-            .execute(conn)?;
-        Ok(())
-    })
+            .execute(conn)
+            .await
+            .map(|_| ())
+    }
 }
 
-pub fn delete_boost(
-    conn: &mut PgConnection,
+pub async fn delete_boost(
+    conn: &mut AsyncPgConnection,
     user_id: UserId,
     post_id: PostId,
 ) -> Result<DeleteStatus, DieselError> {
     // Change names of user_id and post_id because we dont want to mess with database.
     let uid = user_id;
     let pid = post_id;
-    conn.transaction::<DeleteStatus, DieselError, _>(|conn| {
+    {
         use crate::schema::boosts::dsl::*;
         diesel::delete(boosts)
-            .filter(user_id.eq(uid))
             .filter(post_id.eq(pid))
+            .filter(user_id.eq(uid))
             .execute(conn)
+            .await
             .map(|rowcount| {
                 if rowcount > 0 {
                     DeleteStatus::Deleted
@@ -293,11 +337,11 @@ pub fn delete_boost(
                     DeleteStatus::NotFound
                 }
             })
-    })
+    }
 }
 
-pub fn get_boost(
-    conn: &mut PgConnection,
+pub async fn get_boost(
+    conn: &mut AsyncPgConnection,
     user_id: UserId,
     post_id: PostId,
 ) -> Result<bool, DieselError> {
@@ -312,6 +356,7 @@ pub fn get_boost(
             .filter(user_id.eq(uid))
             .select(count(post_id))
             .get_result(conn)
+            .await
             .optional()
             .map(|n: Option<i64>| match n {
                 Some(n) => n == 1,
@@ -322,8 +367,8 @@ pub fn get_boost(
 
 //------------------------------------------------------------------------------
 
-pub fn vote(
-    conn: &mut PgConnection,
+pub async fn vote(
+    conn: &mut AsyncPgConnection,
     user_id: UserId,
     post_id: PostId,
     choice_id: PollChoiceId,
@@ -332,13 +377,14 @@ pub fn vote(
     let uid = user_id;
     let pid = post_id;
     let cid = choice_id;
-    conn.transaction::<VoteCast, DieselError, _>(|conn| {
+    {
         use crate::schema::poll_votes::dsl::*;
         diesel::insert_into(poll_votes)
             .values((user_id.eq(uid), post_id.eq(pid), choice_id.eq(cid)))
             .on_conflict((user_id, post_id))
             .do_nothing()
             .execute(conn)
+            .await
             .map(|n| {
                 if n == 1 {
                     VoteCast::Yes
@@ -346,11 +392,11 @@ pub fn vote(
                     VoteCast::AlreadyVoted
                 }
             })
-    })
+    }
 }
 
-pub fn did_vote(
-    conn: &mut PgConnection,
+pub async fn did_vote(
+    conn: &mut AsyncPgConnection,
     user_id: UserId,
     post_id: PostId,
 ) -> Result<Option<PollChoiceId>, DieselError> {
@@ -364,6 +410,7 @@ pub fn did_vote(
             .filter(user_id.eq(uid))
             .select(choice_id)
             .get_result(conn)
+            .await
             .optional()
     }
 }
@@ -372,8 +419,8 @@ pub struct PollResults {
     pub post_id: PostId,
     pub results: Vec<(PollChoiceId, i64)>,
 }
-pub fn get_poll_results(
-    conn: &mut PgConnection,
+pub async fn get_poll_results(
+    conn: &mut AsyncPgConnection,
     post_id: PostId,
 ) -> Result<PollResults, DieselError> {
     let pid = post_id;
@@ -384,7 +431,8 @@ pub fn get_poll_results(
             .filter(post_id.eq(pid))
             .group_by(choice_id)
             .select((choice_id, count(choice_id)))
-            .load::<(PollChoiceId, i64)>(conn)?;
+            .load::<(PollChoiceId, i64)>(conn)
+            .await?;
 
         Ok(PollResults {
             post_id: pid,
@@ -393,7 +441,10 @@ pub fn get_poll_results(
     }
 }
 
-pub fn get_home_posts(conn: &mut PgConnection, user_id: UserId) -> Result<Vec<Post>, DieselError> {
+pub async fn get_home_posts(
+    conn: &mut AsyncPgConnection,
+    user_id: UserId,
+) -> Result<Vec<Post>, DieselError> {
     let uid = user_id;
     let on_schedule = posts::time_posted.lt(Utc::now());
     let public_only = posts::direct_message_to.is_null();
@@ -420,9 +471,13 @@ pub fn get_home_posts(conn: &mut PgConnection, user_id: UserId) -> Result<Vec<Po
                 .limit(limit),
         )
         .get_results(conn)
+        .await
 }
 
-pub fn get_liked_posts(conn: &mut PgConnection, user_id: UserId) -> Result<Vec<Post>, DieselError> {
+pub async fn get_liked_posts(
+    conn: &mut AsyncPgConnection,
+    user_id: UserId,
+) -> Result<Vec<Post>, DieselError> {
     reactions::table
         .inner_join(posts::table)
         .filter(reactions::user_id.eq(user_id))
@@ -431,10 +486,11 @@ pub fn get_liked_posts(conn: &mut PgConnection, user_id: UserId) -> Result<Vec<P
         .select(Post::as_select())
         .limit(30)
         .get_results(conn)
+        .await
 }
 
-pub fn get_bookmarked_posts(
-    conn: &mut PgConnection,
+pub async fn get_bookmarked_posts(
+    conn: &mut AsyncPgConnection,
     user_id: UserId,
 ) -> Result<Vec<Post>, DieselError> {
     bookmarks::table
@@ -444,4 +500,5 @@ pub fn get_bookmarked_posts(
         .select(Post::as_select())
         .limit(30)
         .get_results(conn)
+        .await
 }

@@ -33,7 +33,7 @@ pub fn Bookmark(post_id: PostId, bookmark: bool) -> Element {
             }
             Err(e) => TOASTER.write().error(
                 format!("Failed to bookmark post : {e}"),
-                Duration::seconds(3),
+                Duration::milliseconds(600),
             ),
         }
     });
@@ -200,7 +200,16 @@ pub fn QuickResponseBox(post_id: PostId, opened: Signal<bool>) -> Element {
 #[component]
 pub fn Actionbar(post_id: PostId) -> Element {
     let post_manager = POSTMANAGER.read();
-    let this_post = post_manager.get(&post_id).unwrap();
+    let this_post = match post_manager.get(&post_id) {
+        Some(post) => post,
+        None => {
+            return rsx!(
+                div {
+                    "Post not found"
+                }
+            );
+        }
+    };
     let this_post_id = this_post.id;
     let quick_response_opened = use_signal(|| false);
 

@@ -49,9 +49,10 @@ pub fn ImageInput(page_state: Signal<PageState>) -> Element {
             match read_as_data_url(&file).await {
                 Ok(data) => page_state
                     .with_mut(|state| state.profile_image = Some(PreviewImageData::DataUrl(data))),
-                Err(e) => TOASTER
-                    .write()
-                    .error(format!("Failed to load file: {}", e), Duration::seconds(5)),
+                Err(e) => TOASTER.write().error(
+                    format!("Failed to load file: {}", e),
+                    Duration::milliseconds(600),
+                ),
             }
         }
     };
@@ -331,9 +332,6 @@ pub fn EditProfile() -> Element {
         match response {
             Ok(_res) => {
                 info!("Profile updated successfully!");
-                TOASTER
-                    .write()
-                    .success("Profile updated", Duration::milliseconds(1000));
                 router().push(Route::Home {});
             }
             Err(err) => {

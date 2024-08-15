@@ -14,7 +14,7 @@ pub mod user;
 pub use uchat_domain::id::*;
 
 pub mod util;
-pub use util::{AsyncConnection, AsyncConnectionPool, OwnedAsyncConnection};
+pub use util::*;
 
 pub mod post;
 pub mod session;

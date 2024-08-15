@@ -70,6 +70,7 @@ async fn run() -> Result<()> {
     debug!(target: "uchat_server", "loading signing keys");
     let signing_keys = load_keys()?;
     info!(target: "uchat_server", database_url = %args.database_url, "connecting to postgres database");
+    // Create new connection pool
     let db_pool = AsyncConnectionPool::new(&args.database_url)
         .await
         .with_context(|| "Check database url")

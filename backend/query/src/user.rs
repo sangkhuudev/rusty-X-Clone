@@ -4,14 +4,14 @@ use crate::QueryError;
 use chrono::DateTime;
 use chrono::Utc;
 use diesel::prelude::*;
-use diesel::PgConnection;
+use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use password_hash::PasswordHashString;
 use uchat_domain::UserId;
 use uchat_domain::Username;
 use uchat_endpoint::Update;
 
-pub fn new<T: AsRef<str>>(
-    conn: &mut PgConnection,
+pub async fn new<T: AsRef<str>>(
+    conn: &mut AsyncPgConnection,
     hash: PasswordHashString,
     handle: T,
 ) -> Result<UserId, QueryError> {
@@ -19,30 +19,32 @@ pub fn new<T: AsRef<str>>(
     let user_id = UserId::new();
 
     // Insert new user into the users table
-    diesel::insert_into(users::table)
+    let _ = diesel::insert_into(users::table)
         .values((
             columns::id.eq(user_id),                  // Set the user ID
             columns::password_hash.eq(hash.as_str()), // Set the password hash
             columns::handle.eq(handle.as_ref()),      // Set the handle
         ))
-        .execute(conn) // Execute the query and propagate any errors
+        .execute(conn)
+        .await // Execute the query and propagate any errors
         .map_err(|e| {
             tracing::log::error!("Failed to insert new user: {}", e);
             QueryError::from(e)
-        })?;
+        });
 
     // Return the new user ID if successful
     Ok(user_id)
 }
 
-pub fn get_hashed_password(
-    conn: &mut PgConnection,
+pub async fn get_hashed_password(
+    conn: &mut AsyncPgConnection,
     username: &Username,
 ) -> Result<String, QueryError> {
     Ok(users::table
         .filter(columns::handle.eq(username.as_ref()))
         .select(columns::password_hash)
-        .get_result(conn)?)
+        .get_result(conn)
+        .await?)
 }
 
 #[derive(Debug, Queryable)]
@@ -57,16 +59,19 @@ pub struct User {
     pub profile_image: Option<String>,
 }
 
-pub fn get(conn: &mut PgConnection, user_id: UserId) -> Result<User, DieselError> {
+pub async fn get(conn: &mut AsyncPgConnection, user_id: UserId) -> Result<User, QueryError> {
     users::table
         .filter(columns::id.eq(user_id))
         .get_result(conn)
+        .await
+        .map_err(QueryError::from)
 }
 
-pub fn find(conn: &mut PgConnection, username: &Username) -> Result<User, DieselError> {
+pub async fn find(conn: &mut AsyncPgConnection, username: &Username) -> Result<User, DieselError> {
     users::table
         .filter(columns::handle.eq(username.as_ref()))
         .get_result(conn)
+        .await
 }
 
 #[derive(Debug)]
@@ -87,8 +92,8 @@ struct UpdateProfileParamsInternal {
     pub profile_image: Option<Option<String>>,
 }
 
-pub fn update_profile(
-    conn: &mut PgConnection,
+pub async fn update_profile(
+    conn: &mut AsyncPgConnection,
     query_params: UpdateProfileParams,
 ) -> Result<(), DieselError> {
     use crate::schema::users;
@@ -107,5 +112,6 @@ pub fn update_profile(
         .filter(users::id.eq(&query_params.id))
         .set(&update)
         .execute(conn)
+        .await
         .map(|_| ())
 }

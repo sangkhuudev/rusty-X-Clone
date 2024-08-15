@@ -103,12 +103,7 @@ pub fn ToastRoot() -> Element {
 
     // A resource that tracks removal of expired toasts
     let _remove_ids = use_resource(move || async move {
-        loop {
-            // Break the loop if there are no toasts
-            if TOASTER.read().toasts.is_empty() {
-                break;
-            }
-
+        while !TOASTER.read().toasts.is_empty() {
             let expired_ids = TOASTER
                 .read()
                 .iter()
@@ -122,15 +117,12 @@ pub fn ToastRoot() -> Element {
                 .collect::<Vec<usize>>();
             info!("The loop will be break after removing toasts ");
 
-            if !expired_ids.is_empty() {
-                for id in &expired_ids {
-                    TOASTER.write().remove(*id);
-                    info!("Removed expired toasts");
-                }
-            }
+            expired_ids
+                .iter()
+                .for_each(|&id| TOASTER.write().remove(id));
 
             // Allow some time before the next check
-            gloo_timers::future::TimeoutFuture::new(600).await
+            gloo_timers::future::TimeoutFuture::new(300).await;
         }
     });
 

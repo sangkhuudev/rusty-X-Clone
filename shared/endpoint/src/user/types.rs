@@ -6,7 +6,7 @@ use url::Url;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PublicUserProfile {
     pub id: UserId,
-    pub dislay_name: Option<DisplayName>,
+    pub display_name: Option<DisplayName>,
     pub handle: String,
     pub profile_image: Option<Url>,
     pub created_at: DateTime<Utc>,
