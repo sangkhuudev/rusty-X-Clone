@@ -132,28 +132,28 @@ pub fn Header(post: PublicPost) -> Element {
 #[component]
 pub fn PublicPostEntry(post_id: PostId) -> Element {
     let post_manager = POSTMANAGER.read();
-    let post = post_manager.get(&post_id);
-    let this_post = match post {
-        Some(post) => use_signal(|| post.clone()),
-        None => return rsx!(div {"Post not found"}),
+    let this_post = match post_manager.get(&post_id) {
+        Some(post) => post,
+        None => {
+            return rsx!(div { "Post not found" });
+        }
     };
-    // let this_post = use_signal(|| post);
 
     rsx!(
         div {
-            key: "{this_post.read().id.to_string()}",
+            key: "{this_post.id.to_string()}",
             class: "grid grid-cols-[50px_1fr] gap-2 mb-4",
-            ProfileImage { post: this_post.read().clone()}
+            ProfileImage { post: this_post.clone()}
             div {
                 class: "flex flex-col gap-3",
                 // header
-                Header { post: this_post.read().clone()},
+                Header { post: this_post.clone()},
                 // reply to
                 // content
-                Content { post: this_post.read().clone()},
+                Content { post: this_post.clone()},
                 // action bar
                 Actionbar {
-                    post_id: this_post.read().id
+                    post_id: this_post.id
                 }
                 hr {}
             }

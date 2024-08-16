@@ -17,7 +17,7 @@ use uchat_endpoint::{
     post::endpoint::{
         Bookmark, BookmarkedPost, Boost, HomePost, LikedPost, NewPost, React, TrendingPost, Vote,
     },
-    user::endpoint::{CreateUser, GetMyProfile, Login, UpdateProfile, ViewProfile},
+    user::endpoint::{CreateUser, FollowUser, GetMyProfile, Login, UpdateProfile, ViewProfile},
     Endpoint,
 };
 
@@ -50,6 +50,7 @@ pub async fn new_router(state: AppState) -> Router {
         .route(GetMyProfile::URL, post(with_handler::<GetMyProfile>))
         .route(UpdateProfile::URL, post(with_handler::<UpdateProfile>))
         .route(ViewProfile::URL, post(with_handler::<ViewProfile>))
+        .route(FollowUser::URL, post(with_handler::<FollowUser>))
         .route(HomePost::URL, post(with_handler::<HomePost>))
         .route(LikedPost::URL, post(with_handler::<LikedPost>))
         .route(BookmarkedPost::URL, post(with_handler::<BookmarkedPost>))

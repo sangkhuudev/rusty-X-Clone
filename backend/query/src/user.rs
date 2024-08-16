@@ -1,3 +1,4 @@
+use crate::post::DeleteStatus;
 use crate::schema::users::{self, columns};
 use crate::DieselError;
 use crate::QueryError;
@@ -114,4 +115,49 @@ pub async fn update_profile(
         .execute(conn)
         .await
         .map(|_| ())
+}
+
+//------------------------------------------------------------------------------
+pub async fn follow(
+    conn: &mut AsyncPgConnection,
+    user_id: UserId,
+    follow: UserId,
+) -> Result<(), DieselError> {
+    // Change names of user_id and post_id because we dont want to mess with database.
+    let uid = user_id;
+    let fid = follow;
+    {
+        use crate::schema::followers::dsl::*;
+        diesel::insert_into(followers)
+            .values((user_id.eq(uid), follows.eq(fid)))
+            .on_conflict((user_id, follows))
+            .do_nothing()
+            .execute(conn)
+            .await
+            .map(|_| ())
+    }
+}
+
+pub async fn unfollow(
+    conn: &mut AsyncPgConnection,
+    user_id: UserId,
+    stop_following: UserId,
+) -> Result<DeleteStatus, DieselError> {
+    let uid = user_id;
+    let fid = stop_following;
+    {
+        use crate::schema::followers::dsl::*;
+        diesel::delete(followers)
+            .filter(follows.eq(fid))
+            .filter(user_id.eq(uid))
+            .execute(conn)
+            .await
+            .map(|rowcount| {
+                if rowcount > 0 {
+                    DeleteStatus::Deleted
+                } else {
+                    DeleteStatus::NotFound
+                }
+            })
+    }
 }

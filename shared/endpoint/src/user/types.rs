@@ -12,3 +12,18 @@ pub struct PublicUserProfile {
     pub created_at: DateTime<Utc>,
     pub am_following: bool,
 }
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum FollowAction {
+    Follow,
+    Unfollow,
+}
+
+impl From<FollowAction> for bool {
+    fn from(value: FollowAction) -> Self {
+        match value {
+            FollowAction::Follow => true,
+            FollowAction::Unfollow => false,
+        }
+    }
+}

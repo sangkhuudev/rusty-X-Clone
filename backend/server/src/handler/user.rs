@@ -6,7 +6,10 @@ use uchat_crypto::{encode_base64, hash_password, password::deserialize_hash, ver
 use uchat_domain::user::DisplayName;
 use uchat_endpoint::{
     app_url::construct_image_url,
-    user::{endpoint::*, types::PublicUserProfile},
+    user::{
+        endpoint::*,
+        types::{FollowAction, PublicUserProfile},
+    },
     Update,
 };
 use uchat_query::{
@@ -23,14 +26,21 @@ use crate::{
 
 use super::{save_image, AuthorizedApiRequest, PublicApiRequest};
 
-pub fn to_public(user: User) -> ApiResult<PublicUserProfile> {
+pub async fn to_public(user: User) -> ApiResult<PublicUserProfile> {
     tracing::info!("Make profile public");
 
-    // Use async and caching
-    let profile_image_url = user.profile_image.as_ref().and_then(|id| {
-        // Assuming an async and cached construct_image_url function
-        tokio::task::block_in_place(|| construct_image_url(id)).ok()
-    });
+    // Start the async URL construction in parallel
+    let profile_image_url_future = if let Some(id) = &user.profile_image {
+        Some(construct_image_url(id))
+    } else {
+        None
+    };
+
+    // Await the result if it was created
+    let profile_image_url = match profile_image_url_future {
+        Some(fut) => fut.await.ok(),
+        None => None,
+    };
 
     Ok(PublicUserProfile {
         id: user.id,
@@ -39,6 +49,7 @@ pub fn to_public(user: User) -> ApiResult<PublicUserProfile> {
             .and_then(|name| DisplayName::try_new(name).ok()),
         handle: user.handle,
         profile_image: profile_image_url,
+        // profile_image: None,
         created_at: user.created_at,
         am_following: false,
     })
@@ -154,7 +165,7 @@ impl AuthorizedApiRequest for GetMyProfile {
 
         tracing::info!("Getting profile...");
         let profile_image_url = if let Some(id) = &user.profile_image {
-            match construct_image_url(id) {
+            match construct_image_url(id).await {
                 Ok(url) => Some(url),
                 Err(e) => {
                     tracing::error!("Failed to construct profile image URL: {:?}", e);
@@ -219,7 +230,7 @@ impl AuthorizedApiRequest for UpdateProfile {
         uchat_query::user::update_profile(&mut conn, query_params).await?;
 
         let profile_image_url = if let Some(id) = &user.profile_image {
-            match construct_image_url(id) {
+            match construct_image_url(id).await {
                 Ok(url) => Some(url),
                 Err(e) => {
                     tracing::error!("Failed to construct profile image URL: {:?}", e);
@@ -258,7 +269,7 @@ impl AuthorizedApiRequest for ViewProfile {
         tracing::info!("Getting profile from database...");
         let profile = uchat_query::user::get(&mut conn, self.for_user).await?;
 
-        let profile = to_public(profile)?;
+        let profile = to_public(profile).await?;
 
         let mut posts = vec![];
         tracing::info!("Fetching public posts...");
@@ -275,5 +286,41 @@ impl AuthorizedApiRequest for ViewProfile {
         info!("Fetching public posts successfully");
 
         Ok((StatusCode::OK, Json(ViewProfileOk { profile, posts })))
+    }
+}
+
+#[async_trait]
+impl AuthorizedApiRequest for FollowUser {
+    type Response = (StatusCode, Json<FollowUserOk>);
+    #[tracing::instrument(
+        name = "Follow a user",
+        skip_all,
+        fields(
+            user_id = ?session.user_id,
+            action = ?self.action
+        )
+    )]
+    async fn process_request(
+        self,
+        DbConnection(mut conn): DbConnection,
+        session: UserSession,
+        _state: AppState,
+    ) -> ApiResult<Self::Response> {
+        match self.action {
+            FollowAction::Follow => {
+                uchat_query::user::follow(&mut conn, session.user_id, self.user_id).await?;
+            }
+            FollowAction::Unfollow => {
+                uchat_query::user::unfollow(&mut conn, session.user_id, self.user_id).await?;
+            }
+        }
+
+        tracing::info!("Success in toggle following.");
+        Ok((
+            StatusCode::OK,
+            Json(FollowUserOk {
+                status: self.action,
+            }),
+        ))
     }
 }

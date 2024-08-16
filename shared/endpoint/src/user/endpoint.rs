@@ -5,7 +5,7 @@ use url::Url;
 
 use crate::{post::types::PublicPost, Update};
 
-use super::types::PublicUserProfile;
+use super::types::{FollowAction, PublicUserProfile};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct CreateUser {
@@ -71,4 +71,15 @@ pub struct ViewProfile {
 pub struct ViewProfileOk {
     pub profile: PublicUserProfile,
     pub posts: Vec<PublicPost>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FollowUser {
+    pub user_id: UserId,
+    pub action: FollowAction,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FollowUserOk {
+    pub status: FollowAction,
 }

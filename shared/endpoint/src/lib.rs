@@ -3,7 +3,7 @@ use post::endpoint::{
     Bookmark, BookmarkedPost, Boost, HomePost, LikedPost, NewPost, React, TrendingPost, Vote,
 };
 use serde::{Deserialize, Serialize};
-use user::endpoint::{CreateUser, GetMyProfile, Login, UpdateProfile, ViewProfile};
+use user::endpoint::{CreateUser, FollowUser, GetMyProfile, Login, UpdateProfile, ViewProfile};
 
 pub mod post;
 pub mod user;
@@ -36,17 +36,11 @@ load_dotenv!();
 pub mod app_url {
     // use anyhow::Context;
     use once_cell::sync::Lazy;
-    use std::collections::HashMap;
     use std::str::FromStr;
-    use std::sync::Mutex;
     use url::Url;
 
     // Compile-time API URL
     pub const API_URL: &str = std::env!("API_URL");
-
-    // Thread-safe cache for constructed image URLs
-    static IMAGE_URL_CACHE: Lazy<Mutex<HashMap<String, Url>>> =
-        Lazy::new(|| Mutex::new(HashMap::new()));
 
     // Base URL precomputed with Lazy
     pub static BASE_IMAGE_URL: Lazy<Url> = Lazy::new(|| {
@@ -56,31 +50,9 @@ pub mod app_url {
             .expect("Failed to join IMAGE path")
     });
 
-    /// Constructs the full image URL for a given image ID.
-    ///
-    /// If the URL has already been constructed, it is retrieved from the cache.
-    /// Otherwise, the URL is constructed, stored in the cache, and returned.
-    ///
-    /// # Arguments
-    ///
-    /// * `id` - A string slice representing the image ID.
-    ///
-    /// # Returns
-    ///
-    /// A `Result` containing the constructed URL or an error if the URL cannot be constructed.
-    // pub fn construct_image_url(id: &str) -> Result<Url, url::ParseError> {
-    //     BASE_IMAGE_URL.join(id)
-    // }
-
-    pub fn construct_image_url(id: &str) -> Result<Url, url::ParseError> {
-        let mut cache = IMAGE_URL_CACHE.lock().unwrap();
-
-        if let Some(cached_url) = cache.get(id) {
-            return Ok(cached_url.clone());
-        }
-
+    pub async fn construct_image_url(id: &str) -> Result<Url, url::ParseError> {
+        // Construct the URL by joining the base image URL with the provided ID
         let url = BASE_IMAGE_URL.join(id)?;
-        cache.insert(id.to_string(), url.clone());
         Ok(url)
     }
     pub mod user_content {
@@ -107,6 +79,7 @@ route!("/posts/bookmarked" => BookmarkedPost);
 route!("/profile/update" => UpdateProfile);
 route!("/profile/me" => GetMyProfile);
 route!("/profile/view" => ViewProfile);
+route!("/user/follow" => FollowUser);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Update<T> {

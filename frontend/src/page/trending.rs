@@ -129,3 +129,71 @@ pub fn Trending() -> Element {
     //     _ => rsx!(div { "Unknown state." }),
     // }
 }
+
+// #![allow(non_snake_case)]
+
+// use crate::prelude::*;
+// use chrono::Duration;
+// use dioxus::prelude::*;
+// use dioxus_logger::tracing;
+// use uchat_endpoint::post::{endpoint::{TrendingPost, TrendingPostOk}, types::PublicPost};
+
+// #[component]
+// pub fn Trending() -> Element {
+//     let api_client = ApiClient::global();
+//     let mut trending_posts = use_signal(Vec::new);
+//     let mut loading = use_signal(|| true);
+//     let mut error = use_signal(|| None::<String>);
+
+//     // Fetch trending posts asynchronously
+//     use_effect(
+//         move || {
+//             // let api_client = api_client.clone();
+//             // let trending_posts = trending_posts.clone();
+//             // let loading = loading.clone();
+//             // let error = error.clone();
+
+//             spawn(async move {
+//                 tracing::info!("Starting request to fetch trending posts.");
+//                 *loading.write() = true;
+
+//                 match fetch_trending_posts(&api_client).await {
+//                     Ok(posts) => {
+//                         *trending_posts.write() = posts;
+//                         TOASTER
+//                             .write()
+//                             .info("Trending posts retrieved", Duration::milliseconds(1000));
+//                     }
+//                     Err(err) => {
+//                         let err_msg = format!("Failed to retrieve trending posts: {err}");
+//                         tracing::error!("{err_msg}");
+//                         *error.write() = Some(err_msg.clone());
+//                         TOASTER.write().error(err_msg, Duration::milliseconds(1000));
+//                     }
+//                 }
+
+//                 *loading.write() = false;
+//             });
+
+//         }
+//     );
+
+//     let post_manager = POSTMANAGER.read();
+
+//     // Render the UI based on loading and error state
+//     if *loading.read() {
+//         rsx!(div { "Loading posts..." })
+//     } else if let Some(error) = &*error.read() {
+//         rsx!(div { "Error: {error}" })
+//     } else {
+//         let posts = post_manager.all_to_public();
+//         rsx!({posts.into_iter()})
+//     }
+// }
+
+// async fn fetch_trending_posts(api_client: &ApiClient) -> Result<Vec<PublicPost>, String> {
+//     match fetch_json!(<TrendingPostOk>, api_client, TrendingPost) {
+//         Ok(res) => Ok(res.posts),
+//         Err(err) => Err(format!("{:?}", err)),
+//     }
+// }

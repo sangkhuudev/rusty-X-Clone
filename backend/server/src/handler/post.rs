@@ -38,7 +38,7 @@ pub async fn to_public(
                 if let ImageKind::Id(id) = img.kind {
                     tracing::debug!("Change the kind of image from ImageKind::Id)");
 
-                    let url = construct_image_url(&id.to_string()).unwrap();
+                    let url = construct_image_url(&id.to_string()).await.unwrap();
                     tracing::info!("Image url: {}", url);
                     tracing::debug!("Kind of image: ImageKind::Url(url)");
                     img.kind = ImageKind::Url(url);
@@ -68,7 +68,7 @@ pub async fn to_public(
             id: post.id,
             by_user: {
                 let profile = uchat_query::user::get(conn, post.user_id).await?;
-                super::user::to_public(profile)?
+                super::user::to_public(profile).await?
             },
             content,
             time_posted: post.time_posted,

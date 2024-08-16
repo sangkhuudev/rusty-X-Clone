@@ -95,7 +95,7 @@ pub async fn get_trending(conn: &mut AsyncPgConnection) -> Result<Vec<Post>, Die
         .filter(direct_message_to.is_null())
         .order(time_posted.desc())
         .limit(30)
-        .get_results(conn)
+        .load(conn)
         .await
 }
 
@@ -113,7 +113,7 @@ pub async fn get_public_posts(
             .filter(direct_message_to.is_null())
             .order(time_posted.desc())
             .limit(30)
-            .get_results(conn)
+            .load(conn)
             .await
     }
 }
@@ -470,7 +470,7 @@ pub async fn get_home_posts(
                 .order(order)
                 .limit(limit),
         )
-        .get_results(conn)
+        .load(conn)
         .await
 }
 
