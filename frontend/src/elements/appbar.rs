@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use crate::prelude::*;
 use dioxus::prelude::*;
 
 pub const BUTTON_SELECTED: &str = "border-slate-600";
@@ -47,6 +48,13 @@ pub struct AppbarProps {
 }
 
 pub fn Appbar(props: AppbarProps) -> Element {
+    let local_profile = LOCAL_PROFILE.read();
+    let profile_image_src = local_profile
+        .image
+        .as_ref()
+        .map(|url| url.as_str())
+        .unwrap_or_else(|| "");
+
     rsx!(
         div {
             class: "max-w-[var(--content-max-width)] h-[var(--appbar-height)]
@@ -58,7 +66,7 @@ pub fn Appbar(props: AppbarProps) -> Element {
                     onclick: move |_| {},
                     img {
                         class: "profile-portrait",
-                        src: ""
+                        src: "{profile_image_src}"
                     }
                 }
                 div {

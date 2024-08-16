@@ -330,8 +330,12 @@ pub fn EditProfile() -> Element {
         let response = fetch_json!(<UpdateProfileOk>, api_client, request_data);
 
         match response {
-            Ok(_res) => {
+            Ok(res) => {
                 info!("Profile updated successfully!");
+                LOCAL_PROFILE.write().image = res.profile_image;
+                TOASTER
+                    .write()
+                    .success("Profile updated", Duration::milliseconds(600));
                 router().push(Route::Home {});
             }
             Err(err) => {
