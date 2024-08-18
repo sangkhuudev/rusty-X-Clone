@@ -28,6 +28,15 @@ impl IntoResponse for ApiError {
     }
 }
 
+impl ApiError {
+    pub fn new<T: Into<anyhow::Error>>(code: StatusCode, error: T) -> Self {
+        Self {
+            code: Some(code),
+            error: error.into(),
+        }
+    }
+}
+
 impl<E> From<E> for ApiError
 where
     E: Into<anyhow::Error>,

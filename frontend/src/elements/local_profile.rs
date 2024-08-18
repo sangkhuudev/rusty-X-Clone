@@ -1,7 +1,5 @@
 #![allow(non_snake_case)]
 
-use crate::prelude::*;
-use dioxus::prelude::*;
 use uchat_domain::UserId;
 use url::Url;
 

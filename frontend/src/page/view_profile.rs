@@ -57,7 +57,16 @@ pub fn ViewProfile(user_id: ReadOnlySignal<String>) -> Element {
                 let profile_image = profile
                     .profile_image
                     .map(|url| url.to_string())
-                    .unwrap_or_else(|| "".to_string());
+                    .unwrap_or("".to_string());
+                // info!("profile image url: {}", profile_image);
+                // let url = construct_image_url(id)
+                // optimize image
+                // /home/sangkhuu/rustdev/repo/x-clone/backend/server/usercontent
+                // pub const OPTIMIZED_IMG: manganis::ImageAsset =
+                //     manganis::mg!(image(profile_image)
+                //         .size(100, 100) // Resize the image to a suitable size
+                //         .format(ImageType::WebP) // Convert the image to WebP format
+                //         .preload()); // Preload the image
 
                 let follow_button_text = match profile.am_following {
                     true => "Unfollow",

@@ -13,7 +13,7 @@ use app::App;
 use chrono::Duration;
 use dioxus::prelude::*;
 use dioxus_logger::tracing::{info, Level};
-use page::{local_profile::LocalProfile, PostManager, Route, Toaster};
+use page::{local_profile::LocalProfile, PostManager, Route, SidebarManager, Toaster};
 use uchat_endpoint::user::endpoint::{GetMyProfile, GetMyProfileOk};
 use util::ApiClient;
 
@@ -22,6 +22,7 @@ pub const ROOT_API_URL: &str = uchat_endpoint::app_url::API_URL;
 pub static TOASTER: GlobalSignal<Toaster> = Signal::global(|| Toaster::default());
 pub static POSTMANAGER: GlobalSignal<PostManager> = Signal::global(|| PostManager::default());
 pub static LOCAL_PROFILE: GlobalSignal<LocalProfile> = Signal::global(|| LocalProfile::default());
+pub static SIDEBAR: GlobalSignal<SidebarManager> = Signal::global(|| SidebarManager::default());
 
 pub fn Init() -> Element {
     let api_client = ApiClient::global();
@@ -59,10 +60,10 @@ fn main() {
 
 mod prelude {
     pub use crate::elements::appbar::{self, Appbar, AppbarImgButton};
-    // pub use crate::elements::post::PublicPostEntry;
+    pub use crate::elements::sidebar::Sidebar;
     pub use crate::icon::*;
     pub use crate::page::*;
     pub use crate::util::api_client::fetch_json;
     pub use crate::util::{async_handler, maybe_class, sync_handler, ApiClient};
-    pub use crate::{LOCAL_PROFILE, POSTMANAGER, TOASTER};
+    pub use crate::{LOCAL_PROFILE, POSTMANAGER, SIDEBAR, TOASTER};
 }

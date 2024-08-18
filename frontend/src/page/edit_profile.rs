@@ -336,7 +336,7 @@ pub fn EditProfile() -> Element {
                 TOASTER
                     .write()
                     .success("Profile updated", Duration::milliseconds(600));
-                router().push(Route::Home {});
+                router().replace(Route::Home {});
             }
             Err(err) => {
                 error!("Login failed: {:?}", err);

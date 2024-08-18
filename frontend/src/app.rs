@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 
 use crate::page::{Route, ToastRoot};
+use crate::prelude::*;
 use crate::Init;
 use dioxus::prelude::*;
 
@@ -16,8 +17,8 @@ pub fn App() -> Element {
             p-4",
 
             Init {}
+            Sidebar {}
             Router::<Route> { config: || RouterConfig::default().history(WebHistory::default()) }
-
             ToastRoot { }
         }
     }

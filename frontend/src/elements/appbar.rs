@@ -63,7 +63,9 @@ pub fn Appbar(props: AppbarProps) -> Element {
                 class: "flex flex-row items-center w-full h-full pr-5 gap-8",
                 div {
                     class: "cursor-pointer",
-                    onclick: move |_| {},
+                    onclick: move |_| {
+                        SIDEBAR.write().open();
+                    },
                     img {
                         class: "profile-portrait",
                         src: "{profile_image_src}"

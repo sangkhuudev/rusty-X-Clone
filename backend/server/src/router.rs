@@ -7,6 +7,7 @@ use axum::{
 
 use tower::ServiceBuilder;
 use tower_http::{
+    compression::CompressionLayer,
     cors::CorsLayer,
     limit::RequestBodyLimitLayer,
     trace::{DefaultMakeSpan, DefaultOnRequest, DefaultOnResponse, TraceLayer},
@@ -21,7 +22,7 @@ use uchat_endpoint::{
     Endpoint,
 };
 
-use once_cell::sync::Lazy;
+// use once_cell::sync::Lazy;
 use uchat_endpoint::app_url::user_content;
 
 use crate::{
@@ -30,13 +31,14 @@ use crate::{
 };
 
 // Define a static Lazy variable to cache the image_url
-static IMAGE_URL: Lazy<String> =
-    Lazy::new(|| format!("{}{}", user_content::ROOT, user_content::IMAGE));
+// static IMAGE_URL: Lazy<String> =
+//     Lazy::new(|| format!("{}{}", user_content::ROOT, user_content::IMAGE));
 
 pub async fn new_router(state: AppState) -> Router {
+    let image_route = format!("{}{}", user_content::ROOT, user_content::IMAGE);
     let public_router = Router::new()
         .route("/", get(move || async { "This is a route page" }))
-        .route(&format!("/{}:id", *IMAGE_URL), get(load_image))
+        .route(&format!("/{}:id", image_route), get(load_image))
         .route(CreateUser::URL, post(with_public_handler::<CreateUser>))
         .route(Login::URL, post(with_public_handler::<Login>));
 
@@ -55,7 +57,8 @@ pub async fn new_router(state: AppState) -> Router {
         .route(LikedPost::URL, post(with_handler::<LikedPost>))
         .route(BookmarkedPost::URL, post(with_handler::<BookmarkedPost>))
         .layer(DefaultBodyLimit::disable())
-        .layer(RequestBodyLimitLayer::new(8 * 1024 * 1024));
+        .layer(RequestBodyLimitLayer::new(8 * 1024 * 1024))
+        .layer(CompressionLayer::new());
 
     Router::new()
         .merge(public_router)

@@ -76,33 +76,57 @@ pub async fn save_image<T: AsRef<[u8]>>(id: ImageId, data: T) -> Result<(), ApiE
     Ok(())
 }
 
+#[tracing::instrument(name = "Getting image from server", skip_all)]
 pub async fn load_image(Path(img_id): Path<Uuid>) -> Result<Response<Body>, ApiError> {
     let mut path = PathBuf::from(USER_CONTEND_DIR);
     path.push(img_id.to_string());
-    let raw = fs::read_to_string(path).await?;
+    tracing::info!("Reading image...");
+    // Attempt to read the image file
+    let raw = fs::read_to_string(path).await.map_err(|e| {
+        ApiError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            anyhow::Error::msg(format!("Failed to read image file: {}", e)),
+        )
+    })?;
 
-    // Data url reference
-    // data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==
-    let (header, image_data) = raw.split_once(",").unwrap();
-    //header=data:text/plain;base64
-    // image_data=SGVsbG8sIFdvcmxkIQ==
-    // mime=text/plain;base64
+    // Split the data into header and image data
+    let (header, image_data) = raw.split_once(",").ok_or_else(|| {
+        ApiError::new(
+            StatusCode::BAD_REQUEST,
+            anyhow::Error::msg("Invalid image format"),
+        )
+    })?;
+
+    // Extract the MIME type from the header
     let mime = header
         .split_once("data:")
-        .unwrap()
-        // 0: data
-        // 1: text/plain;base64
-        .1
-        .split_once(";base64")
-        .unwrap()
-        // 0: text/plain
-        // 1: ;base64
-        .0;
-    let image_data = general_purpose::STANDARD.decode(image_data).unwrap();
+        .and_then(|(_, mime)| mime.split_once(";base64"))
+        .map(|(mime, _)| mime)
+        .ok_or_else(|| {
+            ApiError::new(
+                StatusCode::BAD_REQUEST,
+                anyhow::Error::msg("Invalid MIME type format"),
+            )
+        })?;
 
-    Ok(Response::builder()
+    // Decode the base64 image data
+    tracing::info!("Decoding base64 image data");
+    let image_data = general_purpose::STANDARD.decode(image_data).map_err(|e| {
+        ApiError::new(
+            StatusCode::BAD_REQUEST,
+            anyhow::Error::msg(format!("Failed to decode base64 image data: {}", e)),
+        )
+    })?;
+
+    // Build and return the HTTP response
+    Response::builder()
         .status(StatusCode::OK)
         .header(CONTENT_TYPE, mime)
         .body(Body::from(image_data))
-        .unwrap())
+        .map_err(|e| {
+            ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                anyhow::Error::msg(format!("Failed to build response: {}", e)),
+            )
+        })
 }
