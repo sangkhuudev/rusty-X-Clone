@@ -2,6 +2,7 @@
 
 use crate::icon::*;
 use crate::prelude::*;
+use crate::Init;
 use dioxus::prelude::*;
 #[derive(Props, PartialEq, Clone)]
 pub struct NavButtonProps {
@@ -127,6 +128,9 @@ pub fn Navbar() -> Element {
                     NewPostPopup { hide: hide_new_post_popup }
                 }
             }
+            Init {},
+            Sidebar {}
+            ToastRoot { }
         }
         Outlet::<Route> {}
     )

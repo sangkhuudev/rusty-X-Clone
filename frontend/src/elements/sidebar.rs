@@ -1,7 +1,9 @@
 #![allow(non_snake_case)]
 
 use crate::prelude::*;
+use chrono::Utc;
 use dioxus::prelude::*;
+use uchat_domain::SessionId;
 
 #[derive(Default)]
 pub struct SidebarManager {
@@ -22,7 +24,9 @@ impl SidebarManager {
     }
 }
 
+#[component]
 pub fn Sidebar() -> Element {
+    let router = router();
     let sidebar_width = if SIDEBAR.read().is_open() {
         "w-[var(--sidebar-width)]"
     } else {
@@ -42,13 +46,62 @@ pub fn Sidebar() -> Element {
         }
     };
 
+    let read_local_profile = LOCAL_PROFILE.read();
+    let profile_img_src = read_local_profile
+        .image
+        .as_ref()
+        .map(|url| url.as_str())
+        .unwrap_or_else(|| "");
+
     rsx!(
         { Overlay },
         div {
             class: "{sidebar_width} z-[100] fixed top-0 left-0 h-full
             overflow-x-hidden
             flex flex-col
-            navbar-bg-color transition-[width] duration-300"
+            navbar-bg-color transition-[width] duration-300",
+
+            a {
+                class: "flex flex-row justify-center py-5 cursor-pointer",
+                onclick: move |_| {
+                    SIDEBAR.write().close();
+                    if let Some(id) = LOCAL_PROFILE.read().user_id {
+                        router.push(Route::ViewProfile { user_id: id.to_string() });
+                    }
+                },
+                img {
+                    class: "profile-portrait-lg",
+                    src: "{profile_img_src}"
+                }
+            }
+            a {
+                class: "sidebar-navlink border-t",
+                onclick: move |_| {
+                    SIDEBAR.write().close();
+                    router.push(Route::EditProfile {});
+                },
+                "Edit Profile"
+            } 
+            a {
+                class: "sidebar-navlink",
+                onclick: move |_| {
+                    SIDEBAR.write().close();
+                    router.push(Route::HomeBookmarked {});
+                },
+                "Bookmarks"
+            } 
+            a {
+                class: "sidebar-navlink",
+                onclick: move |_| {
+                    crate::util::cookie::set_session("".to_string(), SessionId::new(), Utc::now());
+                    SIDEBAR.write().close();
+                    LOCAL_PROFILE.write().user_id = None;
+                    LOCAL_PROFILE.write().image = None;
+                    router.push(Route::EditProfile {});
+                },
+                "Logout"
+            }
+
         }
     )
 }

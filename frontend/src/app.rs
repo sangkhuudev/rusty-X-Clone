@@ -1,8 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::page::{Route, ToastRoot};
-use crate::prelude::*;
-use crate::Init;
+use crate::page::Route;
 use dioxus::prelude::*;
 
 #[component]
@@ -16,10 +14,9 @@ pub fn App() -> Element {
             mx-auto
             p-4",
 
-            Init {}
-            Sidebar {}
-            Router::<Route> { config: || RouterConfig::default().history(WebHistory::default()) }
-            ToastRoot { }
+            Router::<Route> {
+                config: || RouterConfig::default().history(WebHistory::default()),
+            }
         }
     }
 }

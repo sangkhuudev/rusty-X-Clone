@@ -81,7 +81,7 @@ pub fn HeadlineInput(page_state: Signal<PageState>) -> Element {
                 r#for: "headline",
                 div {
                     class: "flex flex-row justify-between",
-                    span {"headline"},
+                    span {"Headline"},
                     span {
                         class: "text-right {wrong_len}",
                         "{page_state.read().headline.len()}/{PollHeadline::MAX_CHARS}"
@@ -207,13 +207,13 @@ pub fn NewPoll() -> Element {
                 info!("Post new poll successfully!");
                 TOASTER
                     .write()
-                    .success("Posted successfully", Duration::microseconds(600));
+                    .success("Posted successfully", Duration::microseconds(1500));
                 router.replace(Route::Home {});
             }
             Err(e) => {
                 TOASTER
                     .write()
-                    .error(format!("Posted failed: {e}"), Duration::milliseconds(600));
+                    .error(format!("Post poll failed: {e}"), Duration::milliseconds(1500));
             }
         }
     });

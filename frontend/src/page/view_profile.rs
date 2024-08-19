@@ -44,7 +44,7 @@ pub fn ViewProfile(user_id: ReadOnlySignal<String>) -> Element {
     // Fetch and populate profile and posts data
     let _ = use_resource(move || async move {
         tracing::info!("Starting fetch for profile: {}", user_id);
-        fetch_and_populate_profile(user_id, &api_client, &mut profile).await;
+        fetch_and_populate_profile(user_id, &api_client, &mut profile).await
     });
 
     let ProfileSection = {
@@ -58,15 +58,6 @@ pub fn ViewProfile(user_id: ReadOnlySignal<String>) -> Element {
                     .profile_image
                     .map(|url| url.to_string())
                     .unwrap_or("".to_string());
-                // info!("profile image url: {}", profile_image);
-                // let url = construct_image_url(id)
-                // optimize image
-                // /home/sangkhuu/rustdev/repo/x-clone/backend/server/usercontent
-                // pub const OPTIMIZED_IMG: manganis::ImageAsset =
-                //     manganis::mg!(image(profile_image)
-                //         .size(100, 100) // Resize the image to a suitable size
-                //         .format(ImageType::WebP) // Convert the image to WebP format
-                //         .preload()); // Preload the image
 
                 let follow_button_text = match profile.am_following {
                     true => "Unfollow",
@@ -143,7 +134,7 @@ async fn fetch_and_populate_profile(
 
             TOASTER
                 .write()
-                .info("Retrieving profile", Duration::milliseconds(600));
+                .info("Retrieving profile", Duration::milliseconds(1500));
         }
         Err(err) => {
             tracing::error!("Failed to fetch profiles: {:?}", err);

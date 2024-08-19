@@ -22,17 +22,12 @@ use uchat_endpoint::{
     Endpoint,
 };
 
-// use once_cell::sync::Lazy;
 use uchat_endpoint::app_url::user_content;
 
 use crate::{
     handler::{load_image, with_handler, with_public_handler},
     AppState,
 };
-
-// Define a static Lazy variable to cache the image_url
-// static IMAGE_URL: Lazy<String> =
-//     Lazy::new(|| format!("{}{}", user_content::ROOT, user_content::IMAGE));
 
 pub async fn new_router(state: AppState) -> Router {
     let image_route = format!("{}{}", user_content::ROOT, user_content::IMAGE);

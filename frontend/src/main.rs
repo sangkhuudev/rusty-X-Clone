@@ -24,9 +24,10 @@ pub static POSTMANAGER: GlobalSignal<PostManager> = Signal::global(|| PostManage
 pub static LOCAL_PROFILE: GlobalSignal<LocalProfile> = Signal::global(|| LocalProfile::default());
 pub static SIDEBAR: GlobalSignal<SidebarManager> = Signal::global(|| SidebarManager::default());
 
+#[component]
 pub fn Init() -> Element {
     let api_client = ApiClient::global();
-    let _fetch_local_profile = use_resource(move || async move {
+    let _fetch_local_profile = use_future(move || async move {
         tracing::info!("Starting request to fetch profiles");
 
         // Define a timeout duration and start fetching data
@@ -39,12 +40,12 @@ pub fn Init() -> Element {
             Err(err) => {
                 TOASTER.write().error(
                     format!("Please login or create an account to continue: {err}"),
-                    Duration::milliseconds(600),
+                    Duration::milliseconds(1200),
                 );
                 router().push(Route::Login {});
             }
         }
-    });
+    });   
 
     None
 }

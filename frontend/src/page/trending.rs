@@ -94,14 +94,14 @@ pub fn Trending() -> Element {
     // Fetch trending posts asynchronously using use_resource
     let _fetch_posts = use_resource(move || async move {
         tracing::info!("Starting request to fetch trending posts.");
-        // gloo_timers::future::TimeoutFuture::new(300).await;
+        gloo_timers::future::TimeoutFuture::new(300).await;
         // Define a timeout duration and start fetching data
         match fetch_json!(<TrendingPostOk>, api_client, TrendingPost) {
             Ok(res) => {
                 POSTMANAGER.write().populate(res.posts.clone().into_iter());
                 TOASTER
                     .write()
-                    .info("Retrieving trending posts", Duration::milliseconds(1000));
+                    .info("Retrieving trending posts", Duration::milliseconds(600));
             }
             Err(err) => {
                 tracing::error!("Failed to fetch trending posts: {:?}", err);

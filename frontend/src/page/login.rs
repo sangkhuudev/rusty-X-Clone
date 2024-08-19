@@ -2,6 +2,7 @@
 
 use crate::elements::keyed_notifications_box::{KeyedNotifications, KeyedNotificationsBox};
 use crate::prelude::*;
+use chrono::Duration;
 use dioxus::prelude::*;
 use dioxus_logger::tracing::{error, info};
 use uchat_domain::{Password, Username};
@@ -96,6 +97,9 @@ pub fn Login() -> Element {
         match response {
             Ok(res) => {
                 info!("Login successfully!");
+                TOASTER
+                    .write()
+                    .success("Login successfully", Duration::milliseconds(1200));
                 crate::util::cookie::set_session(
                     res.session_signature,
                     res.session_id,
@@ -103,10 +107,13 @@ pub fn Login() -> Element {
                 );
                 LOCAL_PROFILE.write().image = res.profile_image;
                 LOCAL_PROFILE.write().user_id = Some(res.user_id);
-                router.push(Route::Home {});
+                router.replace(Route::Home {});
             }
             Err(err) => {
                 error!("Login failed: {:?}", err);
+                TOASTER
+                    .write()
+                    .error("Failed to login", Duration::milliseconds(1200));
             }
         }
     });
@@ -138,7 +145,6 @@ pub fn Login() -> Element {
     rsx! {
         form {
             class: "flex flex-col gap-5",
-            prevent_default: "onsubmit",
             onsubmit: form_onsubmit,
 
             // Username input component

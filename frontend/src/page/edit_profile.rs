@@ -44,16 +44,31 @@ pub fn ImageInput(page_state: Signal<PageState>) -> Element {
                 .get_element_by_id("image-input")
                 .unwrap()
                 .unchecked_into::<HtmlInputElement>();
-            let file: File = element_html.files().unwrap().get(0).unwrap().into();
 
-            match read_as_data_url(&file).await {
-                Ok(data) => page_state
-                    .with_mut(|state| state.profile_image = Some(PreviewImageData::DataUrl(data))),
-                Err(e) => TOASTER.write().error(
-                    format!("Failed to load file: {}", e),
-                    Duration::milliseconds(600),
-                ),
+            if let Some(files) = element_html.files() {
+                if let Some(file) = files.get(0) {
+                    let file: File = file.into();
+                    
+                    match read_as_data_url(&file).await {
+                        Ok(data) => page_state
+                            .with_mut(|state| state.profile_image = Some(PreviewImageData::DataUrl(data))),
+                        Err(e) => TOASTER.write().error(
+                            format!("Failed to load file: {}", e),
+                            Duration::milliseconds(600),
+                        ),
+                    }
+                    
+                } else {
+                    TOASTER
+                        .write()
+                        .error("No file selected", Duration::milliseconds(600));
+                }
+            } else {
+                TOASTER
+                    .write()
+                    .error("Failed to access files", Duration::milliseconds(600));
             }
+
         }
     };
 
@@ -265,7 +280,6 @@ pub fn EditProfile() -> Element {
         // Define a timeout duration and start fetching data
         match fetch_json!(<GetMyProfileOk>, api_client, GetMyProfile) {
             Ok(data) => {
-                tracing::info!("Successfully retrieved trending posts.");
                 page_state.with_mut(|state| {
                     state.display_name = data.display_name.unwrap_or_default();
                     state.email = data.email.unwrap_or_default();
@@ -276,13 +290,13 @@ pub fn EditProfile() -> Element {
 
                 TOASTER
                     .write()
-                    .info("Retrieving  profiles...", Duration::milliseconds(600));
+                    .info("Retrieving  profiles...", Duration::milliseconds(1500));
             }
             Err(err) => {
                 tracing::error!("Failed to fetch profiles: {:?}", err);
                 TOASTER.write().error(
                     format!("Failed to retrieve posts : {err}"),
-                    Duration::milliseconds(600),
+                    Duration::milliseconds(1500),
                 );
             }
         }
