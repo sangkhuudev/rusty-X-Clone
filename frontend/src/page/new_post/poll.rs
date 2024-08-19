@@ -211,9 +211,10 @@ pub fn NewPoll() -> Element {
                 router.replace(Route::Home {});
             }
             Err(e) => {
-                TOASTER
-                    .write()
-                    .error(format!("Post poll failed: {e}"), Duration::milliseconds(1500));
+                TOASTER.write().error(
+                    format!("Post poll failed: {e}"),
+                    Duration::milliseconds(1500),
+                );
             }
         }
     });

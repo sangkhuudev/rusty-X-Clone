@@ -48,16 +48,16 @@ pub fn ImageInput(page_state: Signal<PageState>) -> Element {
             if let Some(files) = element_html.files() {
                 if let Some(file) = files.get(0) {
                     let file: File = file.into();
-                    
+
                     match read_as_data_url(&file).await {
-                        Ok(data) => page_state
-                            .with_mut(|state| state.profile_image = Some(PreviewImageData::DataUrl(data))),
+                        Ok(data) => page_state.with_mut(|state| {
+                            state.profile_image = Some(PreviewImageData::DataUrl(data))
+                        }),
                         Err(e) => TOASTER.write().error(
                             format!("Failed to load file: {}", e),
                             Duration::milliseconds(600),
                         ),
                     }
-                    
                 } else {
                     TOASTER
                         .write()
@@ -68,7 +68,6 @@ pub fn ImageInput(page_state: Signal<PageState>) -> Element {
                     .write()
                     .error("Failed to access files", Duration::milliseconds(600));
             }
-
         }
     };
 

@@ -42,10 +42,10 @@ pub fn Init() -> Element {
                     format!("Please login or create an account to continue: {err}"),
                     Duration::milliseconds(1200),
                 );
-                router().push(Route::Login {});
+                router().push(Route::Register {});
             }
         }
-    });   
+    });
 
     None
 }

@@ -649,6 +649,13 @@ video {
   transition-duration: 300ms;
 }
 
+.link {
+  cursor: pointer;
+  --tw-text-opacity: 1;
+  color: rgb(37 99 235 / var(--tw-text-opacity));
+  text-decoration-line: underline;
+}
+
 .static {
   position: static;
 }
@@ -773,6 +780,10 @@ video {
 
 .h-8 {
   height: 2rem;
+}
+
+.h-\[calc\(100vh_-_var\(--navbar-height\)_-_var\(--appbar-height\)\)\] {
+  height: calc(100vh - var(--navbar-height) - var(--appbar-height));
 }
 
 .h-\[var\(--appbar-height\)\] {
@@ -1055,6 +1066,11 @@ video {
 .px-5 {
   padding-left: 1.25rem;
   padding-right: 1.25rem;
+}
+
+.py-5 {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
 }
 
 .pl-4 {

@@ -45,4 +45,8 @@
         @apply cursor-pointer px-3 py-5 block transition 
         duration-300 text-white border-b border-slate-500;
     }
+    .link {
+        @apply cursor-pointer text-blue-600 underline
+    }
+
 }

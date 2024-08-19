@@ -29,17 +29,16 @@ use super::{save_image, AuthorizedApiRequest, PublicApiRequest};
 pub async fn to_public(user: User) -> ApiResult<PublicUserProfile> {
     tracing::info!("Make profile public");
 
-    // Start the async URL construction in parallel
-    let profile_image_url_future = if let Some(id) = &user.profile_image {
-        Some(construct_image_url(id))
+    let profile_image_url = if let Some(id) = &user.profile_image {
+        match construct_image_url(id).await {
+            Ok(url) => Some(url),
+            Err(e) => {
+                tracing::error!("Failed to construct profile image URL: {:?}", e);
+                None
+            }
+        }
     } else {
         None
-    };
-
-    // Await the result if it was created
-    let profile_image_url = match profile_image_url_future {
-        Some(fut) => fut.await.ok(),
-        None => None,
     };
 
     Ok(PublicUserProfile {
@@ -49,7 +48,6 @@ pub async fn to_public(user: User) -> ApiResult<PublicUserProfile> {
             .and_then(|name| DisplayName::try_new(name).ok()),
         handle: user.handle,
         profile_image: profile_image_url,
-        // profile_image: None,
         created_at: user.created_at,
         am_following: false,
     })
@@ -203,28 +201,34 @@ impl AuthorizedApiRequest for UpdateProfile {
         session: UserSession,
         _state: AppState,
     ) -> ApiResult<Self::Response> {
+        let mut payload = self;
         let user = uchat_query::user::get(&mut conn, session.user_id).await?;
 
         let password = {
-            if let Update::Change(ref password) = self.password {
+            if let Update::Change(ref password) = payload.password {
                 Update::Change(uchat_crypto::hash_password(password)?)
             } else {
                 Update::NoChange
             }
         };
 
-        if let Update::Change(ref img) = self.profile_image {
+        if let Update::Change(ref img) = payload.profile_image {
             let id = ImageId::new();
             save_image(id, img).await?;
+            // This line added to fix performance load image from the server
+            // because everytime fetch something from the Frontend
+            // The server send entire data which is huge memory
+            // So we set image to absolute url
+            payload.profile_image = Update::Change(id.to_string());
         }
         tracing::info!("Fetching public posts...");
 
         let query_params = UpdateProfileParams {
             id: session.user_id,
-            display_name: self.display_name,
-            email: self.email,
+            display_name: payload.display_name,
+            email: payload.email,
             password_hash: password,
-            profile_image: self.profile_image.clone(),
+            profile_image: payload.profile_image.clone(),
         };
         tracing::info!("Updating my profile...");
         uchat_query::user::update_profile(&mut conn, query_params).await?;

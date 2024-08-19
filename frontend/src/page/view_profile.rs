@@ -15,6 +15,8 @@ use uchat_endpoint::user::{
 pub fn ViewProfile(user_id: ReadOnlySignal<String>) -> Element {
     let api_client = ApiClient::global();
     let mut profile: Signal<Option<PublicUserProfile>> = use_signal(|| None);
+
+    // Follow button handler
     let follow_onclick = async_handler!([api_client], move |_| async move {
         let am_following = match profile.read().as_ref() {
             Some(profile) => profile.am_following,
@@ -36,7 +38,7 @@ pub fn ViewProfile(user_id: ReadOnlySignal<String>) -> Element {
             }
             Err(e) => TOASTER.write().error(
                 format!("Failed to update follow status : {e}"),
-                Duration::milliseconds(600),
+                Duration::milliseconds(1200),
             ),
         }
     });

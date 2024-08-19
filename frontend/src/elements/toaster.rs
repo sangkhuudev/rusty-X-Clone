@@ -122,7 +122,7 @@ pub fn ToastRoot() -> Element {
                 .for_each(|&id| TOASTER.write().remove(id));
 
             // Allow some time before the next check
-            gloo_timers::future::TimeoutFuture::new(300).await;
+            gloo_timers::future::TimeoutFuture::new(600).await;
         }
     });
 

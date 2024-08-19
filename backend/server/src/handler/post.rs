@@ -36,11 +36,7 @@ pub async fn to_public(
         match content {
             Content::Image(ref mut img) => {
                 if let ImageKind::Id(id) = img.kind {
-                    tracing::debug!("Change the kind of image from ImageKind::Id)");
-
                     let url = construct_image_url(&id.to_string()).await.unwrap();
-                    tracing::info!("Image url: {}", url);
-                    tracing::debug!("Kind of image: ImageKind::Url(url)");
                     img.kind = ImageKind::Url(url);
                 }
             }

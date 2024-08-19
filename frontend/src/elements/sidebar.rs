@@ -81,7 +81,7 @@ pub fn Sidebar() -> Element {
                     router.push(Route::EditProfile {});
                 },
                 "Edit Profile"
-            } 
+            }
             a {
                 class: "sidebar-navlink",
                 onclick: move |_| {
@@ -89,7 +89,7 @@ pub fn Sidebar() -> Element {
                     router.push(Route::HomeBookmarked {});
                 },
                 "Bookmarks"
-            } 
+            }
             a {
                 class: "sidebar-navlink",
                 onclick: move |_| {
@@ -97,7 +97,7 @@ pub fn Sidebar() -> Element {
                     SIDEBAR.write().close();
                     LOCAL_PROFILE.write().user_id = None;
                     LOCAL_PROFILE.write().image = None;
-                    router.push(Route::EditProfile {});
+                    router.push(Route::Login {});
                 },
                 "Logout"
             }
