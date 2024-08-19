@@ -66,6 +66,20 @@ pub fn ViewProfile(user_id: ReadOnlySignal<String>) -> Element {
                     false => "Follow",
                 };
 
+                let FollowButton = LOCAL_PROFILE.read().user_id.map(|id| {
+                    if id == profile.id {
+                        None
+                    } else {
+                        rsx!(
+                            button {
+                                class: "btn",
+                                onclick: follow_onclick,
+                                "{follow_button_text}"
+
+                        })
+                    }
+                });
+
                 rsx! {
                     div {
                         class: "flex flex-col gap-3",
@@ -78,11 +92,7 @@ pub fn ViewProfile(user_id: ReadOnlySignal<String>) -> Element {
                         },
                         div { "Handle: {profile.handle}" },
                         div { "Name: {display_name} "},
-                        button {
-                            class: "btn",
-                            onclick: follow_onclick,
-                            "{follow_button_text}"
-                        }
+                        {FollowButton}
                     }
                 }
             }

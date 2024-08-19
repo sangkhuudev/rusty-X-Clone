@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use axum::{async_trait, http::StatusCode, Json};
 use chrono::{Duration, Utc};
 use diesel_async::AsyncPgConnection;
@@ -10,7 +11,7 @@ use uchat_endpoint::{
         endpoint::*,
         types::{FollowAction, PublicUserProfile},
     },
-    Update,
+    RequestFailed, Update,
 };
 use uchat_query::{
     session::{self, Session},
@@ -19,14 +20,26 @@ use uchat_query::{
 };
 
 use crate::{
-    error::ApiResult,
+    error::{ApiError, ApiResult},
     extractor::{DbConnection, UserSession},
     AppState,
 };
 
 use super::{save_image, AuthorizedApiRequest, PublicApiRequest};
 
-pub async fn to_public(user: User) -> ApiResult<PublicUserProfile> {
+#[tracing::instrument(
+    name = "Make the post public",
+    skip_all,
+    // fields(
+    //     user_id = ?post.user_id,
+    //     content = ?post.content
+    // )
+)]
+pub async fn to_public(
+    conn: &mut AsyncPgConnection,
+    session: Option<&UserSession>,
+    user: User,
+) -> ApiResult<PublicUserProfile> {
     tracing::info!("Make profile public");
 
     let profile_image_url = if let Some(id) = &user.profile_image {
@@ -49,7 +62,14 @@ pub async fn to_public(user: User) -> ApiResult<PublicUserProfile> {
         handle: user.handle,
         profile_image: profile_image_url,
         created_at: user.created_at,
-        am_following: false,
+        am_following: {
+            match session {
+                Some(session) => {
+                    uchat_query::user::is_following(conn, session.user_id, user.id).await?
+                }
+                None => false,
+            }
+        },
     })
 }
 
@@ -273,7 +293,7 @@ impl AuthorizedApiRequest for ViewProfile {
         tracing::info!("Getting profile from database...");
         let profile = uchat_query::user::get(&mut conn, self.for_user).await?;
 
-        let profile = to_public(profile).await?;
+        let profile = to_public(&mut conn, Some(&session), profile).await?;
 
         let mut posts = vec![];
         tracing::info!("Fetching public posts...");
@@ -310,6 +330,16 @@ impl AuthorizedApiRequest for FollowUser {
         session: UserSession,
         _state: AppState,
     ) -> ApiResult<Self::Response> {
+        // If the user itself: Can not follow self
+        if self.user_id == session.user_id {
+            return Err(ApiError {
+                code: Some(StatusCode::BAD_REQUEST),
+                error: anyhow!(RequestFailed {
+                    msg: "Can't follow self".to_string()
+                }),
+            });
+        }
+
         match self.action {
             FollowAction::Follow => {
                 uchat_query::user::follow(&mut conn, session.user_id, self.user_id).await?;

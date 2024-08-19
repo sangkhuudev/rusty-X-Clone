@@ -64,7 +64,7 @@ pub async fn to_public(
             id: post.id,
             by_user: {
                 let profile = uchat_query::user::get(conn, post.user_id).await?;
-                super::user::to_public(profile).await?
+                super::user::to_public(conn, session, profile).await?
             },
             content,
             time_posted: post.time_posted,
