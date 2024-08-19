@@ -83,7 +83,7 @@ pub fn ProfileImage(post: PublicPost) -> Element {
             img {
                 class: "profile-portrait cursor-pointer",
                 onclick: move |_| {
-                    router().push(ViewProfile { user_id: post.by_user.id.to_string()});
+                    navigator().push(ViewProfile { user_id: post.by_user.id.to_string()});
                 },
                 src: "{profile_img_src}",
             }

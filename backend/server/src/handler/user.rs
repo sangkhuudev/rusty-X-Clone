@@ -20,7 +20,7 @@ use uchat_query::{
 };
 
 use crate::{
-    error::{ApiError, ApiResult},
+    error::{ApiError, ApiResult, ServerError},
     extractor::{DbConnection, UserSession},
     AppState,
 };
@@ -141,14 +141,32 @@ impl PublicApiRequest for Login {
         DbConnection(mut conn): DbConnection,
         state: AppState,
     ) -> ApiResult<Self::Response> {
-        let hashed_password = get_hashed_password(&mut conn, &self.username).await?;
-        let hashed_password = deserialize_hash(&hashed_password)?;
-        verify_password(self.password, &hashed_password)?;
+        let hashed_password = get_hashed_password(&mut conn, &self.username)
+            .await
+            .map_err(|_| ServerError::wrong_password())?;
+        let hashed_password =
+            deserialize_hash(&hashed_password).map_err(|_| ServerError::wrong_password())?;
+        verify_password(self.password, &hashed_password)
+            .map_err(|_| ServerError::wrong_password())?;
 
-        let user = uchat_query::user::find(&mut conn, &self.username).await?;
+        let user = uchat_query::user::find(&mut conn, &self.username)
+            .await
+            .map_err(|_| ServerError::missing_login())?;
         info!(username = %self.username.as_ref(), "Login successfully.");
 
         let (session, signature, duration) = new_session(&mut conn, &state, user.id).await?;
+
+        let profile_image_url = if let Some(id) = &user.profile_image {
+            match construct_image_url(id).await {
+                Ok(url) => Some(url),
+                Err(e) => {
+                    tracing::error!("Failed to construct profile image URL: {:?}", e);
+                    None
+                }
+            }
+        } else {
+            None
+        };
 
         Ok((
             StatusCode::OK,
@@ -158,7 +176,7 @@ impl PublicApiRequest for Login {
                 session_expires: Utc::now() + duration,
                 display_name: user.display_name,
                 email: user.email,
-                profile_image: None,
+                profile_image: profile_image_url,
                 user_id: user.id,
             }),
         ))

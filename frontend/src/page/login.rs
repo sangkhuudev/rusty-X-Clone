@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::elements::keyed_notifications_box::{KeyedNotifications, KeyedNotificationsBox};
+use crate::elements::keyed_notifications_box::KeyedNotifications;
 use crate::prelude::*;
 use chrono::Duration;
 use dioxus::prelude::*;
@@ -12,6 +12,7 @@ pub struct PageState {
     pub username: Signal<String>,
     pub password: Signal<String>,
     pub form_error: KeyedNotifications,
+    pub server_messages: KeyedNotifications,
 }
 
 impl PageState {
@@ -20,6 +21,7 @@ impl PageState {
             username: use_signal(String::new),
             password: use_signal(String::new),
             form_error: KeyedNotifications::default(),
+            server_messages: KeyedNotifications::default(),
         }
     }
 
@@ -74,15 +76,25 @@ pub fn PasswordInput(state: Signal<String>, oninput: EventHandler<FormEvent>) ->
 }
 
 #[component]
+pub fn RegisterLink() -> Element {
+    rsx!(
+        Link {
+            class: "link text-center",
+            to: Route::Register {},
+            "Create account"
+        }
+    )
+}
+
+#[component]
 pub fn Login() -> Element {
     info!("Login component initialized!");
 
     let api_client = ApiClient::global();
     let page_state = PageState::new();
     let page_state = use_signal(|| page_state);
-    let router = router();
-
-    let form_onsubmit = async_handler!([api_client, page_state, router], move |_| async move {
+    let navigator = use_navigator();
+    let form_onsubmit = async_handler!([api_client, page_state], move |_| async move {
         info!("Form submitted!");
 
         let request_data = Login {
@@ -107,10 +119,12 @@ pub fn Login() -> Element {
                 );
                 LOCAL_PROFILE.write().image = res.profile_image;
                 LOCAL_PROFILE.write().user_id = Some(res.user_id);
-                router.replace(Route::Home {});
+                navigator.push(Route::Home {});
             }
             Err(err) => {
                 error!("Login failed: {:?}", err);
+                page_state
+                    .with_mut(|state| state.server_messages.set("Login-fail", err.to_string()));
                 TOASTER
                     .write()
                     .error("Failed to login", Duration::milliseconds(1200));
@@ -146,6 +160,11 @@ pub fn Login() -> Element {
         form {
             class: "flex flex-col gap-5",
             onsubmit: form_onsubmit,
+            // Login error
+            KeyedNotificationsBox {
+                legend: "Login errors",
+                notification: page_state.with(|state| state.server_messages.clone())
+            }
 
             // Username input component
             UsernameInput {
@@ -158,7 +177,8 @@ pub fn Login() -> Element {
                 state: page_state.with(|state| state.password),
                 oninput: password_oninput
             }
-
+            // Register link
+            RegisterLink {}
             // Error notifications component
             KeyedNotificationsBox {
                 legend: "Form errors",

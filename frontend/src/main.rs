@@ -42,7 +42,7 @@ pub fn Init() -> Element {
                     format!("Please login or create an account to continue: {err}"),
                     Duration::milliseconds(1200),
                 );
-                router().push(Route::Register {});
+                navigator().push(Route::Login {});
             }
         }
     });
@@ -61,7 +61,6 @@ fn main() {
 
 mod prelude {
     pub use crate::elements::appbar::{self, Appbar, AppbarImgButton};
-    pub use crate::elements::sidebar::Sidebar;
     pub use crate::icon::*;
     pub use crate::page::*;
     pub use crate::util::api_client::fetch_json;

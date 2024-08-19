@@ -65,12 +65,22 @@ pub fn PasswordInput(state: Signal<String>, oninput: EventHandler<FormEvent>) ->
 }
 
 #[component]
+pub fn LoginLink() -> Element {
+    rsx!(
+        Link {
+            class: "link text-center",
+            to: Route::Login {},
+            "Existing user login"
+        }
+    )
+}
+
+#[component]
 pub fn Register() -> Element {
     let api_client = ApiClient::global();
     let page_state = PageState::new();
     let page_state = use_signal(|| page_state);
-    let router = router();
-    let form_onsubmit = async_handler!([api_client, page_state, router], move |_| async move {
+    let form_onsubmit = async_handler!([api_client, page_state], move |_| async move {
         info!("Register component initialized!");
 
         let request_data = CreateUser {
@@ -96,7 +106,7 @@ pub fn Register() -> Element {
 
                 LOCAL_PROFILE.write().user_id = Some(res.user_id);
 
-                router.replace(Route::Home {});
+                navigator().replace(Route::Home {});
             }
             Err(err) => {
                 TOASTER.write().error(
@@ -145,7 +155,8 @@ pub fn Register() -> Element {
                 state: page_state.with(|state| state.password),
                 oninput: password_oninput
             }
-
+            // Login link
+            LoginLink {}
             // Error notifications component
             KeyedNotificationsBox {
                 legend: "Form errors",

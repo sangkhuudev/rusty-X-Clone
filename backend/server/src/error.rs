@@ -11,6 +11,22 @@ pub struct ApiError {
     pub error: anyhow::Error,
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum ServerError {
+    #[error("Login ailed")]
+    Login((StatusCode, String)),
+}
+
+impl ServerError {
+    pub fn missing_login() -> Self {
+        Self::Login((StatusCode::NOT_FOUND, "User not found".to_string()))
+    }
+
+    pub fn wrong_password() -> Self {
+        Self::Login((StatusCode::BAD_REQUEST, "Invalid password".to_string()))
+    }
+}
+
 pub fn error_response<T: Into<String>>(code: StatusCode, msg: T) -> Response {
     (code, Json(RequestFailed { msg: msg.into() })).into_response()
 }
@@ -19,6 +35,12 @@ impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         if let Some(code) = self.code {
             return error_response(code, format!("{}", self.error));
+        }
+
+        if let Some(server_err) = self.error.downcast_ref::<ServerError>() {
+            return match server_err {
+                ServerError::Login((code, msg)) => error_response(*code, msg),
+            };
         }
 
         error_response(

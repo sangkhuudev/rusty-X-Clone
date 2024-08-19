@@ -104,10 +104,9 @@ pub fn NewChat() -> Element {
     info!("NewChat component initialized!");
 
     let api_client = ApiClient::global();
-    let router = router();
     let page_state = use_signal(|| PageState::default());
     let submit_btn_style = maybe_class!("btn-disabled", !page_state.read().can_submit());
-    let form_onsubmit = async_handler!([api_client, page_state, router], move |_| async move {
+    let form_onsubmit = async_handler!([api_client, page_state], move |_| async move {
         info!("Form submitted!");
         let request_data = NewPost {
             content: Chat {
@@ -133,7 +132,7 @@ pub fn NewChat() -> Element {
                 TOASTER
                     .write()
                     .success("Posted successfully", Duration::milliseconds(600));
-                router.replace(Route::Home {});
+                navigator().replace(Route::Home {});
             }
             Err(e) => {
                 TOASTER
@@ -155,7 +154,7 @@ pub fn NewChat() -> Element {
             },
             AppbarImgButton {
                 click_handler: move |_| {
-                    router.push(Route::NewImage {});
+                    navigator().push(Route::NewImage {});
                 },
                 img: ICON_IMAGE,
                 label: "Image",
@@ -163,7 +162,7 @@ pub fn NewChat() -> Element {
             },
             AppbarImgButton {
                 click_handler: move |_| {
-                    router.push(Route::NewPoll {});
+                    navigator().push(Route::NewPoll {});
                 },
                 img: ICON_POLL,
                 label: "Poll",

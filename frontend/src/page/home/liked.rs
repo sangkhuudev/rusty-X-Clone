@@ -14,28 +14,54 @@ pub fn HomeLiked() -> Element {
 
     // Fetch trending posts asynchronously
     let _fetch_posts = use_resource(move || async move {
-        tracing::info!("Starting request to fetch trending posts.");
+        tracing::info!("Starting request to fetch liked posts.");
+        POSTMANAGER.write().clear();
         // Define a timeout duration and start fetching data
         match fetch_json!(<LikedPostOk>, api_client, LikedPost) {
             Ok(data) => {
-                tracing::info!("Successfully retrieved home posts.");
+                tracing::info!("Successfully retrieved liked posts.");
                 POSTMANAGER.write().populate(data.posts.into_iter());
                 TOASTER
                     .write()
-                    .info("Retrieving home posts", Duration::milliseconds(600));
+                    .info("Retrieving liked posts", Duration::milliseconds(1500));
             }
             Err(err) => {
-                tracing::error!("Failed to fetch home posts: {:?}", err);
+                tracing::error!("Failed to fetch liked posts: {:?}", err);
                 TOASTER.write().error(
-                    format!("Failed to retrieve posts : {err}"),
-                    Duration::milliseconds(600),
+                    format!("Failed to retrieve liked posts : {err}"),
+                    Duration::milliseconds(1500),
                 );
             }
         }
     });
 
     let post_manager = POSTMANAGER.read();
-    let Posts = post_manager.all_to_public();
+
+    let Posts = {
+        let posts = post_manager.all_to_public();
+        if posts.is_empty() {
+            let TrendingLink = rsx!(
+                Link {
+                    to: Route::Trending {},
+                    class: "link",
+                    "trending"
+                }
+            );
+            rsx!(
+                div {
+                    // Tailwind doesn't support spaces so we have to use underscore
+                    class: "flex flex-col text-center justify-center
+                    h-[calc(100vh_-_var(--navbar-height)_-_var(--appbar-height))]",
+                    span {
+                        "You haven't liked any posts yet. Checkout what's:   " {TrendingLink}
+                        "   and follow some users to get started."
+                    }
+                }
+            )
+        } else {
+            rsx!({ posts.into_iter() })
+        }
+    };
 
     rsx!(
         Appbar {
@@ -50,7 +76,7 @@ pub fn HomeLiked() -> Element {
             },
             AppbarImgButton {
                 click_handler: move |_| {
-                    router().push(Route::HomeBookmarked {});
+                    navigator().push(Route::HomeBookmarked {});
                 },
                 img: ICON_BOOKMARK,
                 label: "Saved",
@@ -58,13 +84,13 @@ pub fn HomeLiked() -> Element {
             },
             AppbarImgButton {
                 click_handler: move |_| {
-                    router().push(Route::Home {});
+                    navigator().push(Route::Home {});
                 },
                 img: ICON_HOME,
                 label: "Home",
                 title: "Go to Home page",
             },
         }
-        {Posts.into_iter()}
+        {Posts}
     )
 }

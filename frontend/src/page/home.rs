@@ -69,7 +69,7 @@ pub fn Home() -> Element {
             title: "Home",
             AppbarImgButton {
                 click_handler: move |_| {
-                    router().push(Route::HomeLiked {});
+                    navigator().push(Route::HomeLiked {});
                 },
                 img: ICON_LIKE,
                 label: "Liked",
@@ -77,7 +77,7 @@ pub fn Home() -> Element {
             },
             AppbarImgButton {
                 click_handler: move |_| {
-                    router().push(Route::HomeBookmarked {});
+                    navigator().push(Route::HomeBookmarked {});
                 },
                 img: ICON_BOOKMARK,
                 label: "Saved",

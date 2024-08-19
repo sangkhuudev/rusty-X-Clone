@@ -301,7 +301,7 @@ pub fn EditProfile() -> Element {
         }
     });
 
-    let form_onsubmit = async_handler!([api_client, page_state, router], move |_| async move {
+    let form_onsubmit = async_handler!([api_client, page_state], move |_| async move {
         info!("Form submitted!");
 
         let request_data = UpdateProfile {
@@ -349,7 +349,7 @@ pub fn EditProfile() -> Element {
                 TOASTER
                     .write()
                     .success("Profile updated", Duration::milliseconds(600));
-                router().replace(Route::Home {});
+                navigator().replace(Route::Home {});
             }
             Err(err) => {
                 error!("Login failed: {:?}", err);

@@ -26,7 +26,6 @@ impl SidebarManager {
 
 #[component]
 pub fn Sidebar() -> Element {
-    let router = router();
     let sidebar_width = if SIDEBAR.read().is_open() {
         "w-[var(--sidebar-width)]"
     } else {
@@ -45,7 +44,7 @@ pub fn Sidebar() -> Element {
             onclick: move |_| SIDEBAR.write().close(),
         }
     };
-
+    let navigator = use_navigator();
     let read_local_profile = LOCAL_PROFILE.read();
     let profile_img_src = read_local_profile
         .image
@@ -66,7 +65,7 @@ pub fn Sidebar() -> Element {
                 onclick: move |_| {
                     SIDEBAR.write().close();
                     if let Some(id) = LOCAL_PROFILE.read().user_id {
-                        router.push(Route::ViewProfile { user_id: id.to_string() });
+                        navigator.push(Route::ViewProfile { user_id: id.to_string() });
                     }
                 },
                 img {
@@ -78,7 +77,7 @@ pub fn Sidebar() -> Element {
                 class: "sidebar-navlink border-t",
                 onclick: move |_| {
                     SIDEBAR.write().close();
-                    router.push(Route::EditProfile {});
+                    navigator.push(Route::EditProfile {});
                 },
                 "Edit Profile"
             }
@@ -86,9 +85,17 @@ pub fn Sidebar() -> Element {
                 class: "sidebar-navlink",
                 onclick: move |_| {
                     SIDEBAR.write().close();
-                    router.push(Route::HomeBookmarked {});
+                    navigator.push(Route::HomeBookmarked {});
                 },
                 "Bookmarks"
+            }
+            a {
+                class: "sidebar-navlink mb-auto",
+                onclick: move |_| {
+                    SIDEBAR.write().close();
+                    navigator.push(Route::HomeLiked {});
+                },
+                "Liked"
             }
             a {
                 class: "sidebar-navlink",
@@ -97,7 +104,7 @@ pub fn Sidebar() -> Element {
                     SIDEBAR.write().close();
                     LOCAL_PROFILE.write().user_id = None;
                     LOCAL_PROFILE.write().image = None;
-                    router.push(Route::Login {});
+                    navigator.replace(Route::Login {});
                 },
                 "Logout"
             }
