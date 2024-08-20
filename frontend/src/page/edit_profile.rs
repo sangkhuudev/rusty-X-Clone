@@ -146,7 +146,7 @@ pub fn PasswordInput(page_state: Signal<PageState>) -> Element {
                         placeholder: "Password",
                         value: "{page_state.read().password}",
                         oninput: move |ev| {
-                            match Password::try_new(&ev.value()) {
+                            match Password::try_new(ev.value()) {
                                 Ok(_) => page_state.with_mut(|state| state.form_error.remove("Bad password")),
                                 Err(e) => page_state.with_mut(|state| state.form_error.set("Bad password", e.to_string())),
                             }
@@ -204,7 +204,7 @@ pub fn EmailInput(page_state: Signal<PageState>) -> Element {
                 value: "{page_state.read().email}",
                 oninput: move |ev| {
                     if !&ev.value().is_empty() {
-                        match Email::try_new(&ev.value()) {
+                        match Email::try_new(ev.value()) {
                             Ok(_) => {
                                 page_state.with_mut(|state| state.form_error.remove("bad-email"));
                             }
@@ -250,7 +250,7 @@ pub fn DisplayNameInput(page_state: Signal<PageState>) -> Element {
                 placeholder: "Display name",
                 value: "{page_state.read().display_name}",
                 oninput: move |ev| {
-                    match DisplayName::try_new(&ev.value()) {
+                    match DisplayName::try_new(ev.value()) {
                         Ok(_) => {
                             page_state.with_mut(|state| state.form_error.remove("bad-displayname"));
                         }
@@ -268,7 +268,7 @@ pub fn DisplayNameInput(page_state: Signal<PageState>) -> Element {
 
 pub fn EditProfile() -> Element {
     let api_client = ApiClient::global();
-    let mut page_state = use_signal(|| PageState::default());
+    let mut page_state = use_signal(PageState::default);
     let disabled_submit = page_state.with(|state| state.form_error.has_message());
     let submit_btn_style = maybe_class!("btn-disabled", disabled_submit);
 

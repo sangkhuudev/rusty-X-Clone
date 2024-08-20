@@ -44,7 +44,7 @@ pub fn MessageInput(message: String, on_input: EventHandler<FormEvent>) -> Eleme
 #[component]
 pub fn QuickResponse(post_id: PostId, opened: Signal<bool>) -> Element {
     let api_client = ApiClient::global();
-    let mut message = use_signal(|| String::new());
+    let mut message = use_signal(String::new);
 
     let form_onsubmit = async_handler!([api_client], move |_| async move {
         info!("Form submitted!");

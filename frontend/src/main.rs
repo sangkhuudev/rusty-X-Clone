@@ -19,10 +19,10 @@ use util::ApiClient;
 
 pub const ROOT_API_URL: &str = uchat_endpoint::app_url::API_URL;
 
-pub static TOASTER: GlobalSignal<Toaster> = Signal::global(|| Toaster::default());
-pub static POSTMANAGER: GlobalSignal<PostManager> = Signal::global(|| PostManager::default());
-pub static LOCAL_PROFILE: GlobalSignal<LocalProfile> = Signal::global(|| LocalProfile::default());
-pub static SIDEBAR: GlobalSignal<SidebarManager> = Signal::global(|| SidebarManager::default());
+pub static TOASTER: GlobalSignal<Toaster> = Signal::global(Toaster::default);
+pub static POSTMANAGER: GlobalSignal<PostManager> = Signal::global(PostManager::default);
+pub static LOCAL_PROFILE: GlobalSignal<LocalProfile> = Signal::global(LocalProfile::default);
+pub static SIDEBAR: GlobalSignal<SidebarManager> = Signal::global(SidebarManager::default);
 
 #[component]
 pub fn Init() -> Element {

@@ -46,7 +46,7 @@ pub fn ViewProfile(user_id: ReadOnlySignal<String>) -> Element {
     // Fetch and populate profile and posts data
     let _ = use_resource(move || async move {
         tracing::info!("Starting fetch for profile: {}", user_id);
-        fetch_and_populate_profile(user_id, &api_client, &mut profile).await
+        fetch_and_populate_profile(user_id, api_client, &mut profile).await
     });
 
     let ProfileSection = {

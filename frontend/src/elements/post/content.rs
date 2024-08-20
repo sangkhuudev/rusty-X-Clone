@@ -68,12 +68,12 @@ pub fn Poll(post_id: PostId, content: EndpointPoll) -> Element {
                     VoteCast::Yes => {
                         TOASTER
                             .write()
-                            .success(format!("Vote casted"), Duration::seconds(3));
+                            .success("Vote casted".to_string(), Duration::seconds(3));
                     }
                     VoteCast::AlreadyVoted => {
                         TOASTER
                             .write()
-                            .info(format!("Vote already casted"), Duration::seconds(3));
+                            .info("Vote already casted".to_string(), Duration::seconds(3));
                     }
                 },
                 Err(e) => TOASTER

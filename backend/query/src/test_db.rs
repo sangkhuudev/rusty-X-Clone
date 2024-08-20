@@ -1,13 +1,19 @@
-use diesel::{Connection, PgConnection, RunQueryDsl};
+use diesel::{Connection, PgConnection};
+use diesel_async::{AsyncConnection, AsyncPgConnection, RunQueryDsl};
 
-fn reset_database(connection_url: &str) {
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+async fn reset_database(connection_url: &str) {
     // connect to "postgres" database
     let (database, postgres_url) = query_helper::change_database_of_url(connection_url, "postgres");
 
-    let mut conn = PgConnection::establish(&postgres_url).unwrap();
+    let mut conn = AsyncPgConnection::establish(&postgres_url).await.unwrap();
 
     // make the test database
-    if let Err(e) = query_helper::create_database(&database).execute(&mut conn) {
+    if let Err(e) = query_helper::create_database(&database)
+        .execute(&mut conn)
+        .await
+    {
         eprintln!("database creation error: {e}");
     }
 }
@@ -15,47 +21,38 @@ fn reset_database(connection_url: &str) {
 /// Create a new test connection. Requires `TEST_DATABASE_URL` environment variable set.
 ///
 /// Data committed on this connection will not get saved to the database.
-pub fn new_connection() -> PgConnection {
-    // https://github.com/diesel-rs/diesel/blob/master/diesel_tests/tests/schema/mod.rs
+pub async fn new_connection() -> AsyncPgConnection {
     use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
     use std::sync::Once;
     static MIGRATION_GUARD: Once = Once::new();
 
     pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../migrations");
 
-    let mut conn = {
-        let connection_url = dotenvy::var("TEST_DATABASE_URL")
-            .expect("TEST_DATABASE_URL must be set in order to run tests");
+    let connection_url = dotenvy::var("TEST_DATABASE_URL")
+        .expect("TEST_DATABASE_URL must be set in order to run tests");
 
+    let mut conn = {
         // make new database if needed
-        if PgConnection::establish(&connection_url).is_err() {
-            reset_database(&connection_url);
+        if AsyncPgConnection::establish(&connection_url).await.is_err() {
+            reset_database(&connection_url).await;
         }
 
         // connect to the test database
-        PgConnection::establish(&connection_url).unwrap()
+        AsyncPgConnection::establish(&connection_url).await.unwrap()
     };
 
     // run migrations if needed
     MIGRATION_GUARD.call_once(|| {
-        if let Err(e) = conn.run_pending_migrations(MIGRATIONS) {
-            use diesel::result::DatabaseErrorKind;
-            use diesel::result::Error as DieselError;
-            match *e.downcast::<DieselError>().unwrap() {
-                DieselError::DatabaseError(kind, _) => match kind {
-                    // When multiple threads try to create the database (and it doesn't exist)
-                    // then we may get some UniqueViolations as the threads try to create the
-                    // database at the same time. Ignore this error and report all others.
-                    DatabaseErrorKind::UniqueViolation => (),
-                    other => eprintln!("database creation error: {other:?}"),
-                },
-                other => eprintln!("database creation error: {other}"),
-            }
-        }
+        let mut sync_conn =
+            PgConnection::establish(&connection_url).expect("Failed to establish sync connection");
+
+        sync_conn
+            .run_pending_migrations(MIGRATIONS)
+            .expect("Failed to run migrations");
     });
 
     // test transactions are never committed
-    conn.begin_test_transaction().unwrap();
+    let _ = conn.begin_test_transaction();
     conn
 }
 

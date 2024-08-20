@@ -119,7 +119,7 @@ pub fn Register() -> Element {
 
     let username_oninput = sync_handler!([page_state], move |ev: FormEvent| {
         info!("Username input changed: {}", ev.value());
-        if let Err(e) = Username::try_new(&ev.value()) {
+        if let Err(e) = Username::try_new(ev.value()) {
             page_state.with_mut(|state| state.form_error.set("Bad username", e.to_string()));
         } else {
             page_state.with_mut(|state| state.form_error.remove("Bad username"));
@@ -128,7 +128,7 @@ pub fn Register() -> Element {
     });
 
     let password_oninput = sync_handler!([page_state], move |ev: FormEvent| {
-        if let Err(e) = Password::try_new(&ev.value()) {
+        if let Err(e) = Password::try_new(ev.value()) {
             page_state.with_mut(|state| state.form_error.set("Bad password", e.to_string()));
         } else {
             page_state.with_mut(|state| state.form_error.remove("Bad password"));

@@ -106,7 +106,9 @@ impl PublicApiRequest for CreateUser {
         state: AppState,
     ) -> ApiResult<Self::Response> {
         let hashed_password = hash_password(self.password)?;
-        let user_id = uchat_query::user::new(&mut conn, hashed_password, &self.username).await?;
+        let user_id = uchat_query::user::new(&mut conn, hashed_password, &self.username)
+            .await
+            .map_err(|_| ServerError::account_exists())?;
 
         info!(
             username = %self.username.as_ref(),

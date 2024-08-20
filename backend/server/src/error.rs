@@ -15,6 +15,8 @@ pub struct ApiError {
 pub enum ServerError {
     #[error("Login ailed")]
     Login((StatusCode, String)),
+    #[error("Registration failed")]
+    Registration((StatusCode, String)),
 }
 
 impl ServerError {
@@ -24,6 +26,9 @@ impl ServerError {
 
     pub fn wrong_password() -> Self {
         Self::Login((StatusCode::BAD_REQUEST, "Invalid password".to_string()))
+    }
+    pub fn account_exists() -> Self {
+        Self::Login((StatusCode::CONFLICT, "Account already exists".to_string()))
     }
 }
 
@@ -40,12 +45,13 @@ impl IntoResponse for ApiError {
         if let Some(server_err) = self.error.downcast_ref::<ServerError>() {
             return match server_err {
                 ServerError::Login((code, msg)) => error_response(*code, msg),
+                ServerError::Registration((code, msg)) => error_response(*code, msg),
             };
         }
 
         error_response(
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Internal server error"),
+            "Internal server error".to_string(),
         )
     }
 }

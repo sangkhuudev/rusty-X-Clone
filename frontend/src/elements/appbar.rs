@@ -17,7 +17,7 @@ pub struct AppbarImgButtonProps {
 }
 
 pub fn AppbarImgButton(props: AppbarImgButtonProps) -> Element {
-    let append_class = props.append_class.unwrap_or(String::new());
+    let append_class = props.append_class.unwrap_or_default();
     rsx!(
         button {
             class: "flex flex-col h-14 w-10 justify-end items-center

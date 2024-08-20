@@ -186,3 +186,18 @@ pub async fn is_following(
             })
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+    // use crate::test_db::Result;
+    pub mod util {
+        use crate::user as user_query;
+        use crate::user::User;
+        use diesel_async::AsyncPgConnection;
+        pub async fn new_user(conn: &mut AsyncPgConnection, handle: &str) -> User {
+            let hash = uchat_crypto::hash_password("password").unwrap();
+            let id = user_query::new(conn, hash, handle).await.unwrap();
+            user_query::get(conn, id).await.unwrap()
+        }
+    }
+}

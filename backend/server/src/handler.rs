@@ -90,7 +90,7 @@ pub async fn load_image(Path(img_id): Path<Uuid>) -> Result<Response<Body>, ApiE
     })?;
 
     // Split the data into header and image data
-    let (header, image_data) = raw.split_once(",").ok_or_else(|| {
+    let (header, image_data) = raw.split_once(',').ok_or_else(|| {
         ApiError::new(
             StatusCode::BAD_REQUEST,
             anyhow::Error::msg("Invalid image format"),

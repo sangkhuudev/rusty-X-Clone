@@ -129,7 +129,7 @@ pub fn NewImage() -> Element {
     info!("NewChat component initialized!");
 
     let api_client = ApiClient::global();
-    let page_state = use_signal(|| PageState::default());
+    let page_state = use_signal(PageState::default);
     let submit_btn_style = maybe_class!("btn-disabled", !page_state.read().can_submit());
     let form_onsubmit = async_handler!([api_client, page_state], move |_| async move {
         info!("Form submitted!");
