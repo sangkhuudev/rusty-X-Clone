@@ -24,7 +24,6 @@ use super::AuthorizedApiRequest;
     skip(conn, session),
     fields(
         user_id = ?post.user_id,
-        content = ?post.content
     )
 )]
 pub async fn to_public(

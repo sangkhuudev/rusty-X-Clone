@@ -8,6 +8,8 @@ mod trending;
 mod view_profile;
 
 pub use crate::elements::*;
+use crate::Init;
+use dioxus::prelude::*;
 pub use edit_profile::EditProfile;
 pub use home::{bookmarked::HomeBookmarked, liked::HomeLiked, Home};
 pub use login::Login;
@@ -17,12 +19,10 @@ pub use register::Register;
 pub use trending::Trending;
 pub use view_profile::ViewProfile;
 
-use dioxus::prelude::*;
-
 #[derive(Routable, Clone, Debug, PartialEq)]
 #[rustfmt::skip]
 pub enum Route {
-    #[layout(Navbar)]
+    #[layout(Main)]
         #[route("/home")]
         Home {},
 
@@ -62,4 +62,17 @@ pub enum Route {
     PageNotFound {
         route: Vec<String>,
     },
+}
+
+#[component]
+pub fn Main() -> Element {
+    rsx!(
+        div {
+            Init {},
+            Sidebar {}
+            ToastRoot {}
+            Navbar {}
+        }
+        Outlet::<Route> {}
+    )
 }

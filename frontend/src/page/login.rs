@@ -119,7 +119,7 @@ pub fn Login() -> Element {
                 );
                 LOCAL_PROFILE.write().image = res.profile_image;
                 LOCAL_PROFILE.write().user_id = Some(res.user_id);
-                navigator.push(Route::Home {});
+                navigator.replace(Route::Home {});
             }
             Err(err) => {
                 error!("Login failed: {:?}", err);

@@ -30,10 +30,9 @@ use super::{save_image, AuthorizedApiRequest, PublicApiRequest};
 #[tracing::instrument(
     name = "Make the post public",
     skip_all,
-    // fields(
-    //     user_id = ?post.user_id,
-    //     content = ?post.content
-    // )
+    fields(
+        user_id = ?user.id,
+    )
 )]
 pub async fn to_public(
     conn: &mut AsyncPgConnection,
