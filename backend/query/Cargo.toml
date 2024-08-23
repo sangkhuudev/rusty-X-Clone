@@ -37,7 +37,7 @@ features = [
     "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
     "postgres_backend",
 ]
-version = "2.2.0"
+version = "2.2.3"
 default-features = false
 
 [dev-dependencies]
